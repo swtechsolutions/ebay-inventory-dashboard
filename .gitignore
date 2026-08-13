@@ -1,11 +1,11 @@
-# Ignore SQLite Database Files (keeps your personal data private)
+# Ignore SQLite Database Files (keeps personal data private)
 *.db
 *.sqlite
 *.sqlite3
 
-# Ignore Uploaded Product Images
-uploads/
-!uploads/.gitkeep
+# Ignore Uploaded Product Images inside static/uploads
+static/uploads/*
+!static/uploads/.gitkeep
 
 # Ignore Python Cache Files & Virtual Environments
 __pycache__/

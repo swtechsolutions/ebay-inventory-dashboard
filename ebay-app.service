@@ -1,0 +1,20 @@
+[Unit]
+Description=eBay Canada Inventory & Listing Flask App
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/ebay_dashboard
+
+# Use the python binary inside .venv:
+ExecStart=/root/ebay_dashboard/.venv/bin/python app.py
+
+# OR if using Gunicorn for production:
+# ExecStart=/root/ebay_dashboard/.venv/bin/gunicorn --bind 0.0.0.0:5000 app:app
+
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

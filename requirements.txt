@@ -1,0 +1,8 @@
+# Flask Web Framework
+Flask>=3.0.0
+
+# WSGI HTTP Server for production deployment
+gunicorn>=21.2.0
+
+# Utilities for secure filenames (included with Flask/Werkzeug, specified for clarity)
+Werkzeug>=3.0.0

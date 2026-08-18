@@ -50,6 +50,17 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <!-- Condition Dropdown -->
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Condition</label>
+                <select name="condition" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;">
+                    {% for cond in conditions %}
+                        <option value="{{ cond }}" {% if cond == item.condition %}selected{% endif %}>{{ cond }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div>
                 <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Status</label>
                 <select name="status" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;">
@@ -57,6 +68,18 @@
                     <option value="Listed" {% if item.status == 'Listed' %}selected{% endif %}>Listed</option>
                     <option value="Sold" {% if item.status == 'Sold' %}selected{% endif %}>Sold</option>
                 </select>
+            </div>
+
+            <!-- Date Sold Readout Field -->
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Date Sold</label>
+                <input type="text" readonly value="{{ item.date_sold.strftime('%b %d, %Y') if item.date_sold else 'Not Sold' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f3f4f6; color: #4b5563; cursor: not-allowed;">
+            </div>
+
+            <!-- Description Text Area -->
+            <div style="grid-column: span 2;">
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Item Description</label>
+                <textarea name="description" rows="5" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">{{ item.description or '' }}</textarea>
             </div>
 
             <!-- Upload Additional Photos -->

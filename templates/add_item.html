@@ -33,6 +33,19 @@
                     <option value="Listed">Listed</option>
                 </select>
             </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Condition</label>
+                <select name="condition" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;">
+                    {% for cond in conditions %}
+                        <option value="{{ cond }}" {% if cond == 'Good' %}selected{% endif %}>{{ cond }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="grid-column: span 2;">
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Item Description</label>
+                <textarea name="description" rows="4" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="Enter item details, flaws, measurements, or specs..."></textarea>
+            </div>
             
             <!-- Upload Multiple Photos -->
             <div style="grid-column: span 2;">

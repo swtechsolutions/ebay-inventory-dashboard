@@ -55,6 +55,12 @@
                 <strong style="font-size: 14px; color: #111827;">{{ item.category or 'N/A' }}</strong>
             </div>
             <div>
+                <strong style="color: #6b7280; display: block; font-size: 12px;">Condition</strong>
+                <span style="display: inline-block; padding: 2px 8px; background-color: #f3f4f6; color: #374151; border-radius: 4px; font-weight: 500;">
+                    {{ item.condition or 'Used' }}
+                </span>
+            </div>
+            <div>
                 <span style="display: block; font-size: 12px; color: #6b7280;">Listing Price</span>
                 <strong style="font-size: 14px; color: #111827;">${{ '%.2f'|format(item.listing_price or 0.0) }}</strong>
             </div>
@@ -68,9 +74,49 @@
             </div>
             <div>
                 <strong style="color: #6b7280; display: block; font-size: 12px;">Date Sold</strong>
-            <   span>{{ item.date_sold.strftime('%b %d, %Y') if item.date_sold else 'Not Sold' }}</span>
+                <span>{{ item.date_sold.strftime('%b %d, %Y') if item.date_sold else 'Not Sold' }}</span>
             </div>
         </div>
+        <!-- Visible Description Section -->
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
+            <strong style="color: #374151; display: block; font-size: 14px; margin-bottom: 8px;">Item Description</strong>
+            <div style="background-color: #f9fafb; padding: 14px; border-radius: 6px; border: 1px solid #f3f4f6; color: #4b5563; font-size: 14px; line-height: 1.6; white-space: pre-line;">
+                {{ item.description or 'No detailed description provided for this item.' }}
+            </div>
+        </div>
+        <!-- eBay Listing HTML Generator Section -->
+        <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="margin: 0; color: #111827; font-size: 16px;">eBay HTML Description Code</h3>
+                <button onclick="copyEbayCode()" style="background-color: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 500; cursor: pointer;">Copy HTML Code</button>
+            </div>
+            
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 8px;">Copy and paste the code below directly into the 'HTML Description' tab when creating your eBay listing:</p>
+
+            <textarea id="ebayHtmlCode" rows="10" readonly style="width: 100%; padding: 12px; font-family: monospace; font-size: 12px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f9fafb;">
+        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <h2 style="color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px;">{{ item.title }}</h2>
+            <p><strong>Condition:</strong> {{ item.condition or 'Used' }}</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            <h3 style="color: #374151;">Item Description</h3>
+            <div style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+                {{ item.description or 'No additional description provided.' }}
+            </div>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #9ca3af;">SKU: {{ item.sku }}</p>
+        </div>
+            </textarea>
+        </div>
+
+        <script>
+        function copyEbayCode() {
+            const copyText = document.getElementById("ebayHtmlCode");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("eBay HTML Code copied to clipboard!");
+        }
+        </script>
 
         <!-- Financial Breakdown -->
         <h2 style="font-size: 16px; color: #374151; margin-bottom: 16px;">Financial Details</h2>

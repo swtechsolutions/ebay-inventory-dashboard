@@ -30,6 +30,9 @@ CATEGORIES = [
     'Other'
 ]
 
+# Master Condition list
+CONDITIONS = ['New', 'Open Box', 'Very Good', 'Good', 'Acceptable', 'For Parts / Not Working']
+
 # ==============================================================================
 # Database Models
 # ==============================================================================
@@ -50,6 +53,10 @@ class Item(db.Model):
     title = db.Column(db.String(200), nullable=False)
     category = db.Column(db.String(100), nullable=True)
     status = db.Column(db.String(50), default='Unlisted')
+    
+    # New Description and Condition Fields
+    condition = db.Column(db.String(50), nullable=True, default='Good')
+    description = db.Column(db.Text, nullable=True)
     
     # New Date Columns
     date_added = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -172,6 +179,8 @@ def add_item():
             sku=request.form.get('sku'),
             title=request.form.get('title'),
             category=request.form.get('category'),
+            condition=request.form.get('condition'),
+            description=request.form.get('description'),
             status = request.form.get('status', 'Unlisted'),
             date_listed = date_listed,
             date_sold = date_sold,
@@ -196,7 +205,7 @@ def add_item():
         db.session.commit()
         return redirect(url_for('index'))
 
-    return render_template('add_item.html', categories=CATEGORIES)
+    return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS)
 
 
 @app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
@@ -204,30 +213,37 @@ def edit_item(item_id):
     item = Item.query.get_or_404(item_id)
 
     if request.method == 'POST':
-        
-        new_status = request.form.get('status')
+
+        # Get status from form and strip accidental spaces
+        new_status = request.form.get('status', '').strip()
+        old_status = item.status
+
         now = datetime.now(timezone.utc)
-        
-        # Check if status is transitioning to Listed and was not previously listed
-        if new_status == 'Listed' and item.status != 'Listed':
+
+        # Handle Date Listed
+        if new_status == 'Listed' and old_status != 'Listed':
             item.date_listed = now
         elif new_status == 'Unlisted':
-            # Reset date_listed if moved back to Unlisted
             item.date_listed = None
-            
-        # Handle Sold Date
-        if new_status == 'Sold' and item.status != 'Sold':
-            item.date_sold = now
-        elif new_status != 'Sold':
-            item.date_sold = None  # Clear date_sold if status changes back
+
+        # Handle Date Sold
+        if new_status == 'Sold':
+            # Stamp date_sold if it isn't already set
+            if item.date_sold is None or old_status != 'Sold':
+                item.date_sold = now
+        else:
+            # Clear date_sold if item status moves away from Sold
+            item.date_sold = None
         
         item.sku = request.form.get('sku')
         item.title = request.form.get('title')
         item.category = request.form.get('category')
+        item.condition = request.form.get('condition')
+        item.description = request.form.get('description')
         item.status = request.form.get('status')
         item.status = new_status
         item.listing_price = parse_float(request.form.get('listing_price'))
-        item.date_sold = parse_date(request.form.get('date_sold'))
+        item.date_sold = item.date_sold 
 
         item.item_price = parse_float(request.form.get('item_price'))
         item.shipping_paid = parse_float(request.form.get('shipping_paid'))
@@ -247,7 +263,7 @@ def edit_item(item_id):
         db.session.commit()
         return redirect(url_for('view_item', item_id=item.id))
 
-    return render_template('edit_item.html', item=item, categories=CATEGORIES)
+    return render_template('edit_item.html', item=item, categories=CATEGORIES, conditions=CONDITIONS)
 
 
 @app.route('/delete-image/<int:image_id>', methods=['POST'])

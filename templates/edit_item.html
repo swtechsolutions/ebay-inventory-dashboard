@@ -1,177 +1,130 @@
-{% extends 'base.html' %}
-
-{% block title %}
-  {% if item %}Edit {{ item.title }}{% else %}Add New Item{% endif %}
-{% endblock %}
-
-{% block extra_head %}
-<style>
-    .image-management-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 16px;
-        margin-top: 12px;
-        margin-bottom: 20px;
-    }
-
-    .image-card {
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 8px;
-        background-color: #fafafa;
-        text-align: center;
-    }
-
-    .image-card img {
-        width: 100%;
-        height: 110px;
-        object-fit: cover;
-        border-radius: 6px;
-        margin-bottom: 8px;
-    }
-</style>
-{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">
-            {% if item %}Edit Inventory Item{% else %}Add New Inventory Item{% endif %}
-        </h2>
-        {% if item %}
-            <a href="{{ url_for('view_item', item_id=item.id) }}" class="btn btn-secondary">Cancel</a>
-        {% else %}
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
-        {% endif %}
-    </div>
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+    <h1 style="font-size: 24px; color: #111827; margin-bottom: 20px;">Edit Item: {{ item.title }}</h1>
 
-    <!-- 1. Existing Images Section (Visible when editing) -->
-    {% if item %}
-        <h3 style="margin-bottom: 10px; font-size: 1.1rem;">Manage Existing Images</h3>
-        {% if images %}
-            <div class="image-management-grid">
-                {% for img in images %}
-                    <div class="image-card">
-                        <img src="{{ url_for('static', filename=img.image_path) }}" alt="Item thumbnail">
-                        <form action="{{ url_for('delete_image', image_id=img.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this image?');">
-                            <button type="submit" class="btn btn-danger" style="width: 100%; padding: 4px 8px; font-size: 0.8rem;">Delete</button>
+    <!-- Existing Image Management Grid -->
+    <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+        <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 0;">Current Photos ({{ item.images|length }})</h2>
+        
+        {% if item.images %}
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px;">
+                {% for img in item.images %}
+                    <div style="width: 100px; text-align: center; border: 1px solid #e5e7eb; padding: 8px; border-radius: 6px; background-color: #f9fafb;">
+                        <img src="{{ url_for('static', filename=img.image_path) }}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 8px;">
+                        
+                        <!-- Form to delete specific photo -->
+                        <form method="POST" action="{{ url_for('delete_image', image_id=img.id) }}">
+                            <button type="submit" onclick="return confirm('Delete this image?');" style="background-color: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; width: 100%;">
+                                Remove
+                            </button>
                         </form>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p style="color: var(--text-muted); margin-bottom: 20px;">No images uploaded for this item yet.</p>
+            <p style="font-size: 14px; color: #6b7280;">No photos uploaded yet.</p>
         {% endif %}
+    </div>
 
-        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
-    {% endif %}
-
-    <!-- 2. Main Form -->
-    <form action="{% if item %}{{ url_for('edit_item', item_id=item.id) }}{% else %}{{ url_for('add_item') }}{% endif %}" method="POST" enctype="multipart/form-data">
+    <!-- Item Edit Form -->
+    <form method="POST" action="{{ url_for('edit_item', item_id=item.id) }}" enctype="multipart/form-data" style="background-color: #ffffff; padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb;">
         
-        <div class="grid-3">
-            <div class="form-group">
-                <label>SKU (Auto-generated if blank)</label>
-                <input 
-                    type="text" 
-                    name="sku" 
-                    class="form-control" 
-                    value="{{ item.sku if item else '' }}" 
-                    placeholder="{% if not item %}{{ suggested_sku }}{% endif %}"
-                >
+        <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 0;">Basic Information</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">SKU *</label>
+                <input type="text" name="sku" value="{{ item.sku }}" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
             </div>
-            <div class="form-group">
-                <label>Title *</label>
-                <input type="text" name="title" class="form-control" value="{{ item.title if item else '' }}" required>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Title *</label>
+                <input type="text" name="title" value="{{ item.title }}" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
             </div>
-            <div class="form-group">
-                <label>Category</label>
-                <input type="text" name="category" class="form-control" value="{{ item.category if item else '' }}">
-            </div>
-        </div>
-
-        <div class="grid-3">
-            <div class="form-group">
-                <label>Purchase Price ($)</label>
-                <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ item.purchase_price if item else '0.00' }}">
-            </div>
-            <div class="form-group">
-                <label>Listing Price ($)</label>
-                <input type="number" step="0.01" name="listing_price" class="form-control" value="{{ item.listing_price if item else '0.00' }}">
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select name="status" class="form-control">
-                    <option value="Draft" {% if item and item.status == 'Draft' %}selected{% endif %}>Draft</option>
-                    <option value="Active" {% if item and item.status == 'Active' %}selected{% endif %}>Active</option>
-                    <option value="Sold" {% if item and item.status == 'Sold' %}selected{% endif %}>Sold</option>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Category</label>
+                <select name="category" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;">
+                    <option value="">Select a category...</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if item.category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
                 </select>
             </div>
-        </div>
-
-        <div class="form-group">
-            <label>Condition</label>
-            <input type="text" name="condition" class="form-control" value="{{ item.condition if item else '' }}">
-        </div>
-
-        <div class="form-group">
-            <label>Description</label>
-            <textarea name="description" class="form-control" rows="4">{{ item.description if item else '' }}</textarea>
-        </div>
-
-        {% if item %}
-            <h3 style="margin: 25px 0 15px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; font-size: 1.1rem;">Sales & Financial Data</h3>
-
-            <div class="grid-3">
-                <div class="form-group">
-                    <label>Sold Price ($)</label>
-                    <input type="number" step="0.01" name="sold_price" class="form-control" value="{{ item.sold_price or 0.0 }}">
-                </div>
-                <div class="form-group">
-                    <label>Buyer Shipping ($)</label>
-                    <input type="number" step="0.01" name="buyer_shipping" class="form-control" value="{{ item.buyer_shipping or 0.0 }}">
-                </div>
-                <div class="form-group">
-                    <label>Buyer Tax ($)</label>
-                    <input type="number" step="0.01" name="buyer_tax" class="form-control" value="{{ item.buyer_tax or 0.0 }}">
-                </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Status</label>
+                <select name="status" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;">
+                    <option value="Unlisted" {% if item.status == 'Unlisted' %}selected{% endif %}>Unlisted</option>
+                    <option value="Listed" {% if item.status == 'Listed' %}selected{% endif %}>Listed</option>
+                    <option value="Sold" {% if item.status == 'Sold' %}selected{% endif %}>Sold</option>
+                </select>
             </div>
 
-            <div class="grid-3">
-                <div class="form-group">
-                    <label>Transaction Fees ($)</label>
-                    <input type="number" step="0.01" name="transaction_fees" class="form-control" value="{{ item.transaction_fees or 0.0 }}">
-                </div>
-                <div class="form-group">
-                    <label>Promotional Fees ($)</label>
-                    <input type="number" step="0.01" name="promotional_fees" class="form-control" value="{{ item.promotional_fees or 0.0 }}">
-                </div>
-                <div class="form-group">
-                    <label>Actual Shipping Cost ($)</label>
-                    <input type="number" step="0.01" name="actual_shipping_cost" class="form-control" value="{{ item.actual_shipping_cost or 0.0 }}">
-                </div>
+            <!-- Upload Additional Photos -->
+            <div style="grid-column: span 2;">
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Add More Photos</label>
+                <input type="file" name="images" accept="image/*" multiple style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f9fafb;">
             </div>
-
-            <div class="form-group">
-                <label>Sold Date</label>
-                <input type="date" name="sold_date" class="form-control" value="{{ item.sold_date or '' }}">
-            </div>
-        {% endif %}
-
-        <div class="form-group" style="margin-top: 20px;">
-            <label>{% if item %}Upload Additional Photos{% else %}Upload Initial Photos{% endif %}</label>
-            <input type="file" name="images" class="form-control" multiple accept="image/*">
         </div>
 
-        <div style="margin-top: 25px;">
-            <button type="submit" class="btn btn-primary">
-                {% if item %}Save Changes{% else %}Create Item{% endif %}
-            </button>
-            {% if item %}
-                <a href="{{ url_for('view_item', item_id=item.id) }}" class="btn btn-secondary">Cancel</a>
-            {% else %}
-                <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
-            {% endif %}
+        <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 24px;">Listing & Sales Details</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Listing Price ($)</label>
+                <input type="number" step="0.01" name="listing_price" value="{{ '%.2f'|format(item.listing_price or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Date Sold</label>
+                <input type="date" name="date_sold" value="{{ item.date_sold.strftime('%Y-%m-%d') if item.date_sold else '' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+        </div>
+
+        <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 24px;">Incoming Revenue</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Item Price ($)</label>
+                <input type="number" step="0.01" name="item_price" value="{{ '%.2f'|format(item.item_price or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Shipping Paid ($)</label>
+                <input type="number" step="0.01" name="shipping_paid" value="{{ '%.2f'|format(item.shipping_paid or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Tax In ($)</label>
+                <input type="number" step="0.01" name="tax_in" value="{{ '%.2f'|format(item.tax_in or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+        </div>
+
+        <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 24px;">Outgoing Fees & Costs</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">TX Fees ($)</label>
+                <input type="number" step="0.01" name="tx_fees" value="{{ '%.2f'|format(item.tx_fees or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Promo Fees ($)</label>
+                <input type="number" step="0.01" name="promo_fees" value="{{ '%.2f'|format(item.promo_fees or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Other Fees ($)</label>
+                <input type="number" step="0.01" name="other_fees" value="{{ '%.2f'|format(item.other_fees or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Item Cost ($)</label>
+                <input type="number" step="0.01" name="item_cost" value="{{ '%.2f'|format(item.item_cost or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Shipping Cost ($)</label>
+                <input type="number" step="0.01" name="shipping_cost" value="{{ '%.2f'|format(item.shipping_cost or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+            <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Tax Out ($)</label>
+                <input type="number" step="0.01" name="tax_out" value="{{ '%.2f'|format(item.tax_out or 0.0) }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+            <a href="{{ url_for('index') }}" style="background-color: #e5e7eb; color: #374151; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Cancel</a>
+            <button type="submit" style="background-color: #2563eb; color: #ffffff; padding: 10px 18px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Update Item</button>
         </div>
     </form>
 </div>

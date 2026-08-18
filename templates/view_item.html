@@ -1,452 +1,118 @@
-{% extends 'base.html' %}
-
-{% block title %}{{ item.title }}{% endblock %}
-
-{% block extra_head %}
-<style>
-    /* Card & Section Layouts */
-    .view-card {
-        background-color: #ffffff;
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .card-section-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #1e293b;
-        margin-bottom: 16px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
-    }
-
-    /* Grid Display Helpers */
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-    }
-
-    .info-item {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .info-label {
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-muted, #64748b);
-        font-weight: 600;
-    }
-
-    .info-value {
-        font-size: 0.95rem;
-        color: #0f172a;
-        font-weight: 500;
-    }
-
-    /* Financial Card Customizations */
-    .financial-card {
-        background-color: #f8fafc;
-        border: 1px solid var(--border-color, #e2e8f0);
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-
-    .profit-badge {
-        font-weight: bold;
-        padding: 4px 10px;
-        border-radius: 4px;
-        display: inline-block;
-    }
-
-    .profit-positive {
-        background-color: #dcfce7;
-        color: #15803d;
-    }
-
-    .profit-negative {
-        background-color: #fee2e2;
-        color: #b91c1c;
-    }
-
-    /* Gallery Grid Styling */
-    .image-gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 16px;
-        margin-top: 12px;
-    }
-
-    .gallery-thumb {
-        position: relative;
-        width: 100%;
-        height: 130px;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid var(--border-color, #e2e8f0);
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .gallery-thumb:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .gallery-thumb img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .gallery-thumb .overlay-hint {
-        position: absolute;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.3);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.85rem;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-    }
-
-    .gallery-thumb:hover .overlay-hint {
-        opacity: 1;
-    }
-
-    /* Lightbox Modal Overlay */
-    .lightbox-modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        inset: 0;
-        background-color: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(4px);
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        padding: 20px;
-    }
-
-    .lightbox-modal.active {
-        display: flex;
-    }
-
-    .lightbox-content-wrapper {
-        position: relative;
-        max-width: 90vw;
-        max-height: 80vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .lightbox-img {
-        max-width: 90vw;
-        max-height: 75vh;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-        object-fit: contain;
-    }
-
-    .lightbox-toolbar {
-        margin-top: 15px;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-    }
-
-    .lightbox-btn {
-        background: rgba(255, 255, 255, 0.15);
-        color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        padding: 8px 16px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        transition: background 0.2s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .lightbox-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-    }
-
-    .lightbox-close {
-        position: absolute;
-        top: 20px;
-        right: 25px;
-        color: #fff;
-        font-size: 32px;
-        font-weight: bold;
-        cursor: pointer;
-        line-height: 1;
-    }
-
-    .lightbox-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 28px;
-        color: #fff;
-        background: rgba(0, 0, 0, 0.4);
-        border: none;
-        padding: 12px 16px;
-        border-radius: 50%;
-        cursor: pointer;
-        transition: background 0.2s ease;
-    }
-
-    .lightbox-nav:hover {
-        background: rgba(0, 0, 0, 0.8);
-    }
-
-    .lightbox-prev { left: -60px; }
-    .lightbox-next { right: -60px; }
-
-    @media (max-width: 768px) {
-        .lightbox-prev { left: 10px; }
-        .lightbox-next { right: 10px; }
-    }
-</style>
-{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
-<!-- Header Navigation Bar -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <h2>{{ item.title }}</h2>
-    <div>
-        <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-primary">Edit Item</a>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to List</a>
-    </div>
-</div>
-
-<!-- Card 1: General Overview -->
-<div class="view-card">
-    <h3 class="card-section-title">General Information</h3>
-    <div class="info-grid">
-        <div class="info-item">
-            <span class="info-label">SKU</span>
-            <span class="info-value"><span class="badge" style="background-color: #f1f5f9;">{{ item.sku }}</span></span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Status</span>
-            <span class="info-value"><span class="badge badge-{{ item.status|lower }}">{{ item.status }}</span></span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Category</span>
-            <span class="info-value">{{ item.category or 'Uncategorized' }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Condition</span>
-            <span class="info-value">{{ item.condition or 'Not specified' }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Purchase Price</span>
-            <span class="info-value">${{ "%.2f"|format(item.purchase_price or 0) }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Listing Price</span>
-            <span class="info-value">${{ "%.2f"|format(item.listing_price or 0) }}</span>
-        </div>
-    </div>
-</div>
-
-<!-- Card 2: Description & Photos -->
-<div class="view-card">
-    <h3 class="card-section-title">Item Description & Photos</h3>
+<div class="container" style="max-width: 900px; margin: 0 auto; padding: 20px;">
     
-    <div style="margin-bottom: 24px;">
-        <span class="info-label">Description</span>
-        <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); margin-top: 6px; white-space: pre-wrap; font-size: 0.95rem; color: #334155;">{{ item.description or 'No description provided.' }}</div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <a href="{{ url_for('index') }}" style="color: #4b5563; text-decoration: none; font-size: 14px; font-weight: 500;">&larr; Back to Inventory</a>
+        <a href="{{ url_for('edit_item', item_id=item.id) }}" style="background-color: #2563eb; color: #ffffff; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;">Edit Item</a>
     </div>
 
-    <div>
-        <span class="info-label">Photos ({{ images|length }})</span>
-        {% if images %}
-            <div class="image-gallery">
-                {% for img in images %}
-                    <div class="gallery-thumb" onclick="openLightbox({{ loop.index0 }})">
-                        <img src="{{ url_for('static', filename=img.image_path) }}" alt="Photo {{ loop.index }}">
-                        <div class="overlay-hint">🔍 Expand</div>
-                    </div>
-                {% endfor %}
+    <div style="background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; padding: 24px;">
+        
+        <!-- Photo Gallery Grid -->
+        <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 24px; margin-bottom: 24px;">
+            <h2 style="font-size: 14px; color: #6b7280; margin-top: 0; text-transform: uppercase;">Photos ({{ item.images|length }})</h2>
+            {% if item.images %}
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">
+                    {% for img in item.images %}
+                        <a href="{{ url_for('static', filename=img.image_path) }}" target="_blank">
+                            <img src="{{ url_for('static', filename=img.image_path) }}" alt="{{ item.title }}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e7eb;">
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="font-size: 14px; color: #9ca3af; margin: 0;">No photos uploaded for this item.</p>
+            {% endif %}
+        </div>
+
+        <!-- Header Info -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+                <span style="font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">SKU: {{ item.sku }}</span>
+                <h1 style="font-size: 24px; color: #111827; margin: 4px 0;">{{ item.title }}</h1>
             </div>
-        {% else %}
-            <p style="color: var(--text-muted); margin-top: 8px; font-size: 0.9rem;">No photos uploaded for this item.</p>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Card 3: Sales & Financial Data (Moved below Description & Photos, visible when Sold) -->
-{% if item.status == 'Sold' %}
-<div class="financial-card">
-    <h3 class="card-section-title" style="color: #0f172a;">Sales & Financial Performance</h3>
-    
-    <div class="info-grid" style="margin-bottom: 16px;">
-        <div class="info-item">
-            <span class="info-label">Sold Price</span>
-            <span class="info-value">${{ "%.2f"|format(item.sold_price or 0) }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Buyer Shipping</span>
-            <span class="info-value">${{ "%.2f"|format(item.buyer_shipping or 0) }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Buyer Tax</span>
-            <span class="info-value">${{ "%.2f"|format(item.buyer_tax or 0) }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Transaction Fees</span>
-            <span class="info-value">${{ "%.2f"|format(item.transaction_fees or 0) }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Promotional Fees</span>
-            <span class="info-value">${{ "%.2f"|format(item.promotional_fees or 0) }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Actual Shipping Cost</span>
-            <span class="info-value">${{ "%.2f"|format(item.actual_shipping_cost or 0) }}</span>
-        </div>
-    </div>
-
-    <div class="info-grid" style="padding-top: 16px; border-top: 1px dashed var(--border-color, #e2e8f0); align-items: center;">
-        <div class="info-item">
-            <span class="info-label">Sold Date</span>
-            <span class="info-value">{{ item.sold_date or 'N/A' }}</span>
-        </div>
-        <div class="info-item">
-            <span class="info-label">Calculated Net Profit</span>
-            <span class="info-value">
-                <span class="profit-badge {% if net_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
-                    ${{ "%.2f"|format(net_profit or 0) }}
+                <!-- Clean status badge using Jinja variables -->
+                {% if item.status == 'Listed' %}
+                    {% set badge_bg = '#d1fae5' %}
+                    {% set badge_text = '#065f46' %}
+                {% elif item.status == 'Sold' %}
+                    {% set badge_bg = '#e0e7ff' %}
+                    {% set badge_text = '#3730a3' %}
+                {% else %}
+                    {% set badge_bg = '#f3f4f6' %}
+                    {% set badge_text = '#374151' %}
+                {% endif %}
+                <span style="padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 500; display: inline-block; background-color: {{ badge_bg }}; color: {{ badge_text }};">
+                    {{ item.status }}
                 </span>
-            </span>
         </div>
-    </div>
-</div>
-{% endif %}
 
-<!-- Card 4: eBay HTML Generator (At the bottom) -->
-<div class="view-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 class="card-section-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">eBay Listing HTML Description</h3>
-        <button id="copyEbayBtn" onclick="copyEbayHTML()" class="btn btn-primary">Copy HTML</button>
-    </div>
-    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
-        Copy and paste the HTML below directly into the eBay description editor (HTML mode).
-    </p>
-    <textarea 
-        id="ebayHtmlTextarea" 
-        class="form-control" 
-        rows="8" 
-        readonly 
-        style="font-family: monospace; font-size: 0.85rem; background-color: #f8fafc;"
-    >{{ ebay_html }}</textarea>
-</div>
+        <!-- Summary Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; background-color: #f9fafb; padding: 16px; border-radius: 6px;">
+            <div>
+                <span style="display: block; font-size: 12px; color: #6b7280;">Category</span>
+                <strong style="font-size: 14px; color: #111827;">{{ item.category or 'N/A' }}</strong>
+            </div>
+            <div>
+                <span style="display: block; font-size: 12px; color: #6b7280;">Listing Price</span>
+                <strong style="font-size: 14px; color: #111827;">${{ '%.2f'|format(item.listing_price or 0.0) }}</strong>
+            </div>
+            <div>
+                <strong style="color: #6b7280; display: block; font-size: 12px;">Date Added</strong>
+                <span>{{ item.date_added.strftime('%b %d, %Y') if item.date_added else 'N/A' }}</span>
+            </div>
+            <div>
+                <strong style="color: #6b7280; display: block; font-size: 12px;">Date Listed</strong>
+                <span>{{ item.date_listed.strftime('%b %d, %Y') if item.date_listed else 'Not Listed Yet' }}</span>
+            </div>
+            <div>
+                <strong style="color: #6b7280; display: block; font-size: 12px;">Date Sold</strong>
+            <   span>{{ item.date_sold.strftime('%b %d, %Y') if item.date_sold else 'Not Sold' }}</span>
+            </div>
+        </div>
 
-<!-- Lightbox Modal -->
-<div id="lightboxModal" class="lightbox-modal" onclick="closeLightboxOnBackground(event)">
-    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-    
-    <div class="lightbox-content-wrapper">
-        {% if images|length > 1 %}
-            <button class="lightbox-nav lightbox-prev" onclick="changeImage(-1)">&#10094;</button>
-        {% endif %}
-        
-        <img id="lightboxImg" class="lightbox-img" src="" alt="Expanded View">
-        
-        {% if images|length > 1 %}
-            <button class="lightbox-nav lightbox-next" onclick="changeImage(1)">&#10095;</button>
-        {% endif %}
-    </div>
-
-    <div class="lightbox-toolbar">
-        <a id="downloadBtn" href="" download class="lightbox-btn">
-            💾 Download Image
-        </a>
-    </div>
-</div>
-
-<script>
-    const imageUrls = [
-        {% for img in images %}
-            "{{ url_for('static', filename=img.image_path) }}"{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ];
-
-    let currentIndex = 0;
-
-    function openLightbox(index) {
-        if (imageUrls.length === 0) return;
-        currentIndex = index;
-        updateLightbox();
-        document.getElementById('lightboxModal').classList.add('active');
-        document.addEventListener('keydown', handleKeyPress);
-    }
-
-    function closeLightbox() {
-        document.getElementById('lightboxModal').classList.remove('active');
-        document.removeEventListener('keydown', handleKeyPress);
-    }
-
-    function closeLightboxOnBackground(event) {
-        if (event.target.id === 'lightboxModal') {
-            closeLightbox();
-        }
-    }
-
-    function changeImage(direction) {
-        currentIndex = (currentIndex + direction + imageUrls.length) % imageUrls.length;
-        updateLightbox();
-    }
-
-    function updateLightbox() {
-        const url = imageUrls[currentIndex];
-        document.getElementById('lightboxImg').src = url;
-        
-        const downloadBtn = document.getElementById('downloadBtn');
-        downloadBtn.href = url;
-        const filename = url.split('/').pop();
-        downloadBtn.download = filename;
-    }
-
-    function handleKeyPress(e) {
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowLeft') changeImage(-1);
-        if (e.key === 'ArrowRight') changeImage(1);
-    }
-
-    function copyEbayHTML() {
-        const textarea = document.getElementById('ebayHtmlTextarea');
-        textarea.select();
-        textarea.setSelectionRange(0, 99999);
-
-        navigator.clipboard.writeText(textarea.value).then(() => {
-            const btn = document.getElementById('copyEbayBtn');
-            const originalText = btn.innerText;
-            btn.innerText = 'Copied!';
-            btn.style.backgroundColor = '#16a34a';
+        <!-- Financial Breakdown -->
+        <h2 style="font-size: 16px; color: #374151; margin-bottom: 16px;">Financial Details</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
             
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.backgroundColor = '';
-            }, 2000);
-        }).catch(err => {
-            alert('Failed to copy text: ' + err);
-        });
-    }
-</script>
+            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px;">
+                <h3 style="font-size: 14px; color: #059669; margin-top: 0; margin-bottom: 12px;">Incoming Revenue</h3>
+                <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                    <tr><td style="padding: 4px 0;">Item Price:</td><td style="text-align: right;">${{ '%.2f'|format(item.item_price or 0.0) }}</td></tr>
+                    <tr><td style="padding: 4px 0;">Shipping Paid:</td><td style="text-align: right;">${{ '%.2f'|format(item.shipping_paid or 0.0) }}</td></tr>
+                    <tr><td style="padding: 4px 0;">Tax In:</td><td style="text-align: right;">${{ '%.2f'|format(item.tax_in or 0.0) }}</td></tr>
+                    <tr style="border-top: 1px dashed #e5e7eb; font-weight: bold;"><td style="padding-top: 8px;">Total Revenue:</td><td style="padding-top: 8px; text-align: right; color: #059669;">${{ '%.2f'|format(item.total_revenue) }}</td></tr>
+                </table>
+            </div>
+
+            <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px;">
+                <h3 style="font-size: 14px; color: #dc2626; margin-top: 0; margin-bottom: 12px;">Outgoing Fees & Costs</h3>
+                <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                    <tr><td style="padding: 2px 0;">TX Fees:</td><td style="text-align: right;">${{ '%.2f'|format(item.tx_fees or 0.0) }}</td></tr>
+                    <tr><td style="padding: 2px 0;">Promo Fees:</td><td style="text-align: right;">${{ '%.2f'|format(item.promo_fees or 0.0) }}</td></tr>
+                    <tr><td style="padding: 2px 0;">Other Fees:</td><td style="text-align: right;">${{ '%.2f'|format(item.other_fees or 0.0) }}</td></tr>
+                    <tr><td style="padding: 2px 0;">Item Cost:</td><td style="text-align: right;">${{ '%.2f'|format(item.item_cost or 0.0) }}</td></tr>
+                    <tr><td style="padding: 2px 0;">Shipping Cost:</td><td style="text-align: right;">${{ '%.2f'|format(item.shipping_cost or 0.0) }}</td></tr>
+                    <tr><td style="padding: 2px 0;">Tax Out:</td><td style="text-align: right;">${{ '%.2f'|format(item.tax_out or 0.0) }}</td></tr>
+                    <tr style="border-top: 1px dashed #e5e7eb; font-weight: bold;"><td style="padding-top: 8px;">Total Costs:</td><td style="padding-top: 8px; text-align: right; color: #dc2626;">${{ '%.2f'|format(item.total_costs) }}</td></tr>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Net Profit -->
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px; border-radius: 6px; display: flex; justify-content: space-around; text-align: center;">
+            <div>
+                <span style="font-size: 13px; color: #166534;">Net Profit</span>
+                <div style="font-size: 22px; font-weight: bold; color: {% if item.profit >= 0 %}#15803d{% else %}#dc2626{% endif %};">${{ '%.2f'|format(item.profit) }}</div>
+            </div>
+            <div style="border-left: 1px solid #bbf7d0; padding-left: 32px;">
+                <span style="font-size: 13px; color: #166534;">Profit Margin</span>
+                <div style="font-size: 22px; font-weight: bold; color: {% if item.profit_margin >= 0 %}#15803d{% else %}#dc2626{% endif %};">{{ '%.1f'|format(item.profit_margin) }}%</div>
+            </div>
+        </div>
+
+    </div>
+</div>
 {% endblock %}

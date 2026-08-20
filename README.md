@@ -57,3 +57,35 @@ inventory-app/
     ├── index.html           # Main inventory list dashboard
     ├── view_item.html       # Detailed item view cards, financial stats, and eBay HTML
     └── edit_item.html       # Add / Edit item form with multi-image upload
+```
+
+---
+
+## Installation Instructions
+
+Clone the repo
+```
+git clone https://github.com/swtechsolutions/ebay-inventory-dashboard.git
+```
+
+Create a venv and activate it
+```python
+cd ebay-inventory-dashboard
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install requirements
+```python
+pip install -r requirements.txt
+```
+
+Run the app
+```python
+python3 app.py
+```
+
+Open the website
+```
+http://127.0.0.1:5000
+```

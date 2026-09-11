@@ -4,20 +4,6 @@ A modern, responsive web application built with Python and Flask to manage inven
 
 ---
 
-## Purpose & Developer Assistant Goals
-
-This project is developed with a clear focus on clean software design, continuous learning, and actionable code documentation.
-
-### Core Goals
-- **Code Creation:** Writing complete, production-ready code to achieve application features and UI enhancements.
-- **Education:** Documenting code mechanics and concepts (e.g., ORM models, Jinja2 templating, SQLite initialization) to build a deep understanding of full-stack Flask development.
-- **Clear Instructions:** Providing easy-to-follow, step-by-step guides for setup, deployment, and template customization.
-- **Thorough Documentation:** Maintaining detailed code comments, clear folder structures, and usage workflows.
-
-> **Note:** Development discussions and contributions for this repository are strictly focused on software engineering, web development, and coding topics.
-
----
-
 ## Key Features
 
 - **Inventory Dashboard**: View, sort, and track all your products at a glance with clean visual cards.

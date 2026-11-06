@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .rp { max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
+    .rp *, .rp *::before, .rp *::after { box-sizing: border-box; }
+    .rp-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .rp-head h1 { font-size: 24px; color: #111827; margin: 0; }
+    .rp-btn { display: inline-block; padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
+    .rp-btn-primary { background-color: #2563eb; color: #ffffff; }
+    .rp-btn-ghost { background-color: #ffffff; color: #374151; border: 1px solid #d1d5db; }
+
+    .rp-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: #ffffff; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .rp-filters label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 4px; }
+    .rp-filters select, .rp-filters input { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: #ffffff; font-size: 14px; color: #111827; }
+    .rp-note { font-size: 12px; color: #6b7280; margin: 8px 0 24px; }
+
+    .rp-section-title { font-size: 20px; color: #111827; margin: 32px 0 4px; }
+    .rp-section-sub { font-size: 13px; color: #6b7280; margin: 0 0 16px; }
+
+    .rp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .rp-tile { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; }
+    .rp-tile-label { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+    .rp-tile-value { font-size: 24px; font-weight: 600; color: #111827; }
+    .rp-tile-hero .rp-tile-value { font-size: 32px; }
+    .rp-tile-sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .rp-neg { color: #b91c1c; }
+    .rp-pos { color: #15803d; }
+
+    .rp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px; margin-bottom: 16px; }
+    .rp-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; min-width: 0; }
+    .rp-grid .rp-card { margin-bottom: 0; }
+    .rp-card h3 { font-size: 15px; color: #111827; margin: 0 0 4px; }
+    .rp-card-sub { font-size: 12px; color: #6b7280; margin: 0 0 12px; }
+    .rp-chart { position: relative; width: 100%; }
+
+    .rp-table-wrap { overflow-x: auto; }
+    .rp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .rp-table th { text-align: left; font-weight: 600; color: #6b7280; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; background: #f9fafb; }
+    .rp-table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; color: #111827; }
+    .rp-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .rp-table tfoot td { font-weight: 700; border-top: 1px solid #e5e7eb; border-bottom: none; background: #f9fafb; }
+    .rp-table a { color: #2563eb; text-decoration: none; }
+    .rp-table td.rp-title { min-width: 220px; }
+    .rp-table a:hover { text-decoration: underline; }
+
+    details.rp-details { margin-top: 12px; }
+    details.rp-details summary { cursor: pointer; font-size: 13px; color: #2563eb; }
+    details.rp-details .rp-table-wrap { margin-top: 8px; }
+
+    .rp-seg { display: flex; gap: 2px; height: 28px; margin: 4px 0 16px; }
+    .rp-seg-part { border-radius: 4px; display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: visible; min-width: 0; }
+    .rp-seg-part.dark-text { color: #0b0b0b; }
+    .rp-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; }
+
+    .rp-empty { background: #ffffff; border: 1px dashed #d1d5db; border-radius: 8px; padding: 32px; text-align: center; color: #6b7280; font-size: 14px; }
+    .rp-badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 500; display: inline-block; }
+</style>
+
+{% macro money_cls(v) %}{{ 'rp-neg' if (v or 0) < 0 else '' }}{% endmacro %}
+
+<div class="rp">
+    <div class="rp-head">
+        <h1>Reports</h1>
+        <a class="rp-btn rp-btn-ghost" href="{{ url_for('export_report', **request.args) }}">Export to CSV</a>
+    </div>
+
+    <!-- Filters: scope everything below -->
+    <form method="GET" action="{{ url_for('reports') }}" class="rp-filters" id="reportFilters">
+        <div>
+            <label for="f-type">Report</label>
+            <select name="type" id="f-type">
+                {% for value, label in report_types %}
+                    <option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="f-range">Date range</label>
+            <select name="range" id="f-range">
+                {% for value, label in date_presets %}
+                    <option value="{{ value }}" {% if filters.range == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="f-start">From</label>
+            <input type="date" name="start" id="f-start" value="{{ filters.start.isoformat() if filters.start else '' }}">
+        </div>
+        <div>
+            <label for="f-end">To</label>
+            <input type="date" name="end" id="f-end" value="{{ filters.end.isoformat() if filters.end else '' }}">
+        </div>
+        <div>
+            <label for="f-category">Category</label>
+            <select name="category" id="f-category">
+                <option value="">All categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+                <option value="{{ uncategorized }}" {% if filters.category == uncategorized %}selected{% endif %}>Uncategorized</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="rp-btn rp-btn-primary">Run report</button>
+            <a href="{{ url_for('reports') }}" class="rp-btn rp-btn-ghost">Reset</a>
+        </div>
+    </form>
+    <p class="rp-note">
+        The date range applies to the <strong>date sold</strong> for sold items and the <strong>date added</strong> for unsold items.
+        {% if filters.start or filters.end %}
+            Showing {{ filters.start.strftime('%b %d, %Y') if filters.start else 'the beginning' }} to {{ filters.end.strftime('%b %d, %Y') if filters.end else 'today' }}.
+        {% endif %}
+    </p>
+
+    {# ================================================================== #}
+    {# SOLD ITEMS                                                         #}
+    {# ================================================================== #}
+    {% if sold %}
+    <h2 class="rp-section-title">Sold items</h2>
+    <p class="rp-section-sub">Revenue includes item price, shipping paid and tax collected. Expenses include all fees, item cost, shipping cost and tax paid.</p>
+
+    {% if sold.count == 0 %}
+        <div class="rp-empty">No sold items match these filters.</div>
+    {% else %}
+    <div class="rp-tiles">
+        <div class="rp-tile rp-tile-hero">
+            <div class="rp-tile-label">Profit</div>
+            <div class="rp-tile-value {{ money_cls(sold.profit) }}">{{ sold.profit|money }}</div>
+            <div class="rp-tile-sub">{{ '%.1f'|format(sold.margin) }}% margin</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Revenue</div>
+            <div class="rp-tile-value">{{ sold.revenue|money }}</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Expenses</div>
+            <div class="rp-tile-value">{{ sold.expenses|money }}</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Items sold</div>
+            <div class="rp-tile-value">{{ sold.count }}</div>
+            <div class="rp-tile-sub">{{ sold.avg_profit|money }} profit per item</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Average time to sell</div>
+            <div class="rp-tile-value">{{ '%.0f'|format(sold.avg_days_to_sell) ~ ' days' if sold.avg_days_to_sell is not none else '—' }}</div>
+            <div class="rp-tile-sub">From date listed (or added) to date sold</div>
+        </div>
+    </div>
+
+    <!-- Monthly chart -->
+    <div class="rp-card">
+        <h3>Revenue, expenses and profit by month</h3>
+        <p class="rp-card-sub">Totals for items sold in each month.</p>
+        <div class="rp-chart" style="height: 320px;"><canvas id="chartMonthly" aria-label="Column chart of revenue, expenses and profit by month" role="img"></canvas></div>
+        <details class="rp-details">
+            <summary>Show monthly table</summary>
+            <div class="rp-table-wrap">
+                <table class="rp-table">
+                    <thead><tr><th>Month</th><th class="num">Items sold</th><th class="num">Revenue</th><th class="num">Expenses</th><th class="num">Profit</th></tr></thead>
+                    <tbody>
+                        {% for m in sold.monthly %}
+                        <tr><td>{{ m.label }}</td><td class="num">{{ m.count }}</td><td class="num">{{ m.revenue|money }}</td><td class="num">{{ m.expenses|money }}</td><td class="num {{ money_cls(m.profit) }}">{{ m.profit|money }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </div>
+
+    <div class="rp-grid">
+        <!-- Profit by category -->
+        <div class="rp-card">
+            <h3>Profit by category</h3>
+            <p class="rp-card-sub">Hover a bar for revenue and expenses.</p>
+            <div class="rp-chart" style="height: {{ [180, sold.by_category|length * 40 + 60]|max }}px;"><canvas id="chartSoldCategory" aria-label="Bar chart of profit by category" role="img"></canvas></div>
+        </div>
+
+        <!-- Expense breakdown -->
+        <div class="rp-card">
+            <h3>Where the money went</h3>
+            <p class="rp-card-sub">Share of total expenses ({{ sold.expenses|money }}).</p>
+            {% set seg_colors = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300'] %}
+            {% if sold.expenses > 0 %}
+            <div class="rp-seg" role="img" aria-label="Expense breakdown: {% for b in sold.breakdown if b.amount > 0 %}{{ b.label }} {{ '%.0f'|format(b.share) }}%{% if not loop.last %}, {% endif %}{% endfor %}">
+                {% for b in sold.breakdown %}
+                    {% if b.amount > 0 %}
+                    <div class="rp-seg-part {% if loop.index0 == 3 %}dark-text{% endif %}"
+                         style="flex: {{ b.amount }} 1 0; background-color: {{ seg_colors[loop.index0] }};"
+                         title="{{ b.label }}: {{ b.amount|money }} ({{ '%.1f'|format(b.share) }}%)">
+                        {% if b.share >= 12 %}{{ '%.0f'|format(b.share) }}%{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="rp-table-wrap">
+                <table class="rp-table">
+                    <thead><tr><th>Expense</th><th class="num">Amount</th><th class="num">Share</th></tr></thead>
+                    <tbody>
+                        {% for b in sold.breakdown %}
+                        <tr>
+                            <td><span class="rp-swatch" style="background-color: {{ seg_colors[loop.index0] }};"></span>{{ b.label }}</td>
+                            <td class="num">{{ b.amount|money }}</td>
+                            <td class="num">{{ '%.1f'|format(b.share) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot><tr><td>Total</td><td class="num">{{ sold.expenses|money }}</td><td class="num">100%</td></tr></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category summary -->
+    <div class="rp-card">
+        <h3>Sales by category</h3>
+        <div class="rp-table-wrap">
+            <table class="rp-table">
+                <thead><tr><th>Category</th><th class="num">Items sold</th><th class="num">Revenue</th><th class="num">Expenses</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead>
+                <tbody>
+                    {% for c in sold.by_category %}
+                    <tr><td>{{ c.name }}</td><td class="num">{{ c.count }}</td><td class="num">{{ c.revenue|money }}</td><td class="num">{{ c.expenses|money }}</td><td class="num {{ money_cls(c.profit) }}">{{ c.profit|money }}</td><td class="num">{{ '%.1f'|format(c.margin) }}%</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Sold item details -->
+    <div class="rp-card">
+        <h3>Sold item details</h3>
+        <p class="rp-card-sub">{{ sold.count }} item{{ 's' if sold.count != 1 }}, newest sale first.</p>
+        <div class="rp-table-wrap">
+            <table class="rp-table">
+                <thead>
+                    <tr>
+                        <th>Date sold</th><th>SKU</th><th>Title</th><th>Category</th>
+                        <th class="num">Item price</th><th class="num">Shipping paid</th><th class="num">Tax in</th><th class="num">Revenue</th>
+                        <th class="num">Fees</th><th class="num">Item cost</th><th class="num">Shipping cost</th><th class="num">Tax out</th><th class="num">Expenses</th>
+                        <th class="num">Profit</th><th class="num">Margin</th><th class="num">Days to sell</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in sold.rows %}
+                    <tr>
+                        <td style="white-space: nowrap;">{{ i.date_sold.strftime('%b %d, %Y') if i.date_sold else '—' }}</td>
+                        <td style="white-space: nowrap;">{{ i.sku }}</td>
+                        <td class="rp-title"><a href="{{ url_for('view_item', item_id=i.id) }}">{{ i.title }}</a></td>
+                        <td>{{ i.category or '—' }}</td>
+                        <td class="num">{{ i.item_price|money }}</td>
+                        <td class="num">{{ i.shipping_paid|money }}</td>
+                        <td class="num">{{ i.tax_in|money }}</td>
+                        <td class="num">{{ i.total_revenue|money }}</td>
+                        <td class="num">{{ ((i.tx_fees or 0) + (i.promo_fees or 0) + (i.other_fees or 0))|money }}</td>
+                        <td class="num">{{ i.item_cost|money }}</td>
+                        <td class="num">{{ i.shipping_cost|money }}</td>
+                        <td class="num">{{ i.tax_out|money }}</td>
+                        <td class="num">{{ i.total_costs|money }}</td>
+                        <td class="num {{ 'rp-neg' if i.profit < 0 else 'rp-pos' }}" style="font-weight: 600;">{{ i.profit|money }}</td>
+                        <td class="num">{{ '%.1f'|format(i.profit_margin) }}%</td>
+                        <td class="num">{{ i.days_to_sell if i.days_to_sell is not none else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4">Total ({{ sold.count }})</td>
+                        <td class="num">{{ sold.totals.item_price|money }}</td>
+                        <td class="num">{{ sold.totals.shipping_paid|money }}</td>
+                        <td class="num">{{ sold.totals.tax_in|money }}</td>
+                        <td class="num">{{ sold.revenue|money }}</td>
+                        <td class="num">{{ (sold.breakdown[2].amount + sold.breakdown[3].amount + sold.breakdown[4].amount)|money }}</td>
+                        <td class="num">{{ sold.breakdown[0].amount|money }}</td>
+                        <td class="num">{{ sold.breakdown[1].amount|money }}</td>
+                        <td class="num">{{ sold.breakdown[5].amount|money }}</td>
+                        <td class="num">{{ sold.expenses|money }}</td>
+                        <td class="num {{ money_cls(sold.profit) }}">{{ sold.profit|money }}</td>
+                        <td class="num">{{ '%.1f'|format(sold.margin) }}%</td>
+                        <td class="num">{{ '%.0f'|format(sold.avg_days_to_sell) if sold.avg_days_to_sell is not none else '—' }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {# ================================================================== #}
+    {# UNSOLD ITEMS                                                       #}
+    {# ================================================================== #}
+    {% if unsold %}
+    <h2 class="rp-section-title">Unsold items</h2>
+    <p class="rp-section-sub">Items with a status of Listed or Unlisted. Potential profit is listing price minus item cost, before fees and shipping.</p>
+
+    {% if unsold.count == 0 %}
+        <div class="rp-empty">No unsold items match these filters.</div>
+    {% else %}
+    <div class="rp-tiles">
+        <div class="rp-tile">
+            <div class="rp-tile-label">Unsold items</div>
+            <div class="rp-tile-value">{{ unsold.count }}</div>
+            <div class="rp-tile-sub">{{ unsold.listed }} listed · {{ unsold.unlisted }} not listed</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Money invested</div>
+            <div class="rp-tile-value">{{ unsold.cost|money }}</div>
+            <div class="rp-tile-sub">Total item cost</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Listing value</div>
+            <div class="rp-tile-value">{{ unsold.listing_value|money }}</div>
+            <div class="rp-tile-sub">Total of listing prices</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Potential profit</div>
+            <div class="rp-tile-value {{ money_cls(unsold.potential) }}">{{ unsold.potential|money }}</div>
+            <div class="rp-tile-sub">Before fees and shipping</div>
+        </div>
+        <div class="rp-tile">
+            <div class="rp-tile-label">Average days in inventory</div>
+            <div class="rp-tile-value">{{ '%.0f'|format(unsold.avg_age) ~ ' days' if unsold.avg_age is not none else '—' }}</div>
+        </div>
+    </div>
+
+    <div class="rp-grid">
+        <div class="rp-card">
+            <h3>Money tied up by category</h3>
+            <p class="rp-card-sub">Item cost compared with listing price.</p>
+            <div class="rp-chart" style="height: {{ [200, unsold.by_category|length * 56 + 80]|max }}px;"><canvas id="chartUnsoldCategory" aria-label="Bar chart of item cost and listing value by category" role="img"></canvas></div>
+        </div>
+        <div class="rp-card">
+            <h3>Inventory age</h3>
+            <p class="rp-card-sub">Number of unsold items by days since they were added.</p>
+            <div class="rp-chart" style="height: 260px;"><canvas id="chartAge" aria-label="Column chart of unsold items by age" role="img"></canvas></div>
+            <details class="rp-details">
+                <summary>Show age table</summary>
+                <div class="rp-table-wrap">
+                    <table class="rp-table">
+                        <thead><tr><th>Age</th><th class="num">Items</th><th class="num">Money invested</th></tr></thead>
+                        <tbody>
+                            {% for b in unsold.age_buckets %}
+                            <tr><td>{{ b.label }}</td><td class="num">{{ b.count }}</td><td class="num">{{ b.cost|money }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <div class="rp-card">
+        <h3>Unsold by category</h3>
+        <div class="rp-table-wrap">
+            <table class="rp-table">
+                <thead><tr><th>Category</th><th class="num">Items</th><th class="num">Money invested</th><th class="num">Listing value</th><th class="num">Potential profit</th></tr></thead>
+                <tbody>
+                    {% for c in unsold.by_category %}
+                    <tr><td>{{ c.name }}</td><td class="num">{{ c.count }}</td><td class="num">{{ c.cost|money }}</td><td class="num">{{ c.listing_value|money }}</td><td class="num {{ money_cls(c.potential) }}">{{ c.potential|money }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="rp-card">
+        <h3>Unsold item details</h3>
+        <p class="rp-card-sub">{{ unsold.count }} item{{ 's' if unsold.count != 1 }}, oldest first.</p>
+        <div class="rp-table-wrap">
+            <table class="rp-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th><th>Title</th><th>Category</th><th>Status</th><th>Date added</th><th>Date listed</th>
+                        <th class="num">Days in inventory</th><th class="num">Listing price</th><th class="num">Item cost</th><th class="num">Potential profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in unsold.rows %}
+                    <tr>
+                        <td style="white-space: nowrap;">{{ i.sku }}</td>
+                        <td class="rp-title"><a href="{{ url_for('view_item', item_id=i.id) }}">{{ i.title }}</a></td>
+                        <td>{{ i.category or '—' }}</td>
+                        <td>
+                            {% if i.status == 'Listed' %}
+                                <span class="rp-badge" style="background-color: #d1fae5; color: #065f46;">Listed</span>
+                            {% else %}
+                                <span class="rp-badge" style="background-color: #f3f4f6; color: #374151;">{{ i.status or 'Unlisted' }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">{{ i.date_added.strftime('%b %d, %Y') if i.date_added else '—' }}</td>
+                        <td style="white-space: nowrap;">{{ i.date_listed.strftime('%b %d, %Y') if i.date_listed else '—' }}</td>
+                        <td class="num">{{ i.days_in_inventory if i.days_in_inventory is not none else '—' }}</td>
+                        <td class="num">{{ i.listing_price|money }}</td>
+                        <td class="num">{{ i.item_cost|money }}</td>
+                        <td class="num {{ money_cls(i.potential_profit) }}">{{ i.potential_profit|money }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6">Total ({{ unsold.count }})</td>
+                        <td class="num">{{ '%.0f'|format(unsold.avg_age) ~ ' avg' if unsold.avg_age is not none else '—' }}</td>
+                        <td class="num">{{ unsold.listing_value|money }}</td>
+                        <td class="num">{{ unsold.cost|money }}</td>
+                        <td class="num {{ money_cls(unsold.potential) }}">{{ unsold.potential|money }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<script id="report-data" type="application/json">{{ chart_data|tojson }}</script>
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+(function () {
+    // When a From/To date is picked, switch the preset to "Custom range"
+    var range = document.getElementById('f-range');
+    ['f-start', 'f-end'].forEach(function (id) {
+        document.getElementById(id).addEventListener('change', function () { range.value = 'custom'; });
+    });
+    // Picking a preset other than custom clears the custom dates
+    range.addEventListener('change', function () {
+        if (range.value !== 'custom') {
+            document.getElementById('f-start').value = '';
+            document.getElementById('f-end').value = '';
+        }
+    });
+
+    if (typeof Chart === 'undefined') return;
+    var data = JSON.parse(document.getElementById('report-data').textContent);
+
+    var COLORS = { revenue: '#2a78d6', expenses: '#eb6834', profit: '#1baf7a' };
+    var GRID = '#e1e0d9', AXIS = '#c3c2b7', MUTED = '#898781', INK = '#0b0b0b', INK2 = '#52514e';
+
+    Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = MUTED;
+
+    function money(v) {
+        var s = Math.abs(v).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (v < 0 ? '-$' : '$') + s;
+    }
+    function moneyTick(v) {
+        var a = Math.abs(v), sign = v < 0 ? '-' : '';
+        if (a >= 1000000) return sign + '$' + (a / 1000000).toFixed(a % 1000000 ? 1 : 0) + 'M';
+        if (a >= 10000) return sign + '$' + (a / 1000).toFixed(0) + 'K';
+        return sign + '$' + a.toLocaleString('en-CA');
+    }
+
+    var BAR = { borderRadius: 4, borderSkipped: 'start', maxBarThickness: 24, borderWidth: 0 };
+
+    function tooltip(extra) {
+        return Object.assign({
+            backgroundColor: '#ffffff', borderColor: 'rgba(11,11,11,0.12)', borderWidth: 1,
+            titleColor: INK2, titleFont: { weight: '500' }, bodyColor: INK, bodyFont: { weight: '600' },
+            padding: 10, boxWidth: 12, boxHeight: 2, usePointStyle: false, caretSize: 0, cornerRadius: 6,
+        }, extra || {});
+    }
+    function legend() {
+        return { position: 'top', align: 'start',
+                 labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 2, color: INK2, padding: 16 } };
+    }
+    function valueAxis(isX, tickFn) {
+        return { grid: { color: GRID, drawTicks: false }, border: { display: false },
+                 ticks: { callback: tickFn || moneyTick, padding: 8 }, beginAtZero: true };
+    }
+    function categoryAxis() {
+        return { grid: { display: false }, border: { color: AXIS }, ticks: { color: INK2, padding: 6 } };
+    }
+    function hoverLift(color) { return color + 'cc'; }
+
+    // ---- Sold: monthly revenue / expenses / profit ----
+    var el = document.getElementById('chartMonthly');
+    if (el && data.monthly && data.monthly.length) {
+        var series = [['revenue', 'Revenue'], ['expenses', 'Expenses'], ['profit', 'Profit']];
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: data.monthly.map(function (m) { return m.label; }),
+                datasets: series.map(function (s) {
+                    return Object.assign({ label: s[1], data: data.monthly.map(function (m) { return m[s[0]]; }),
+                        backgroundColor: COLORS[s[0]], hoverBackgroundColor: hoverLift(COLORS[s[0]]) }, BAR);
+                }),
+            },
+            options: {
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                datasets: { bar: { categoryPercentage: 0.7, barPercentage: 0.92 } },
+                scales: { x: categoryAxis(), y: valueAxis(false) },
+                plugins: {
+                    legend: legend(),
+                    tooltip: tooltip({ callbacks: {
+                        label: function (c) { return money(c.parsed.y) + '  ' + c.dataset.label; },
+                        footer: function (items) {
+                            var m = data.monthly[items[0].dataIndex];
+                            return m.count + ' item' + (m.count === 1 ? '' : 's') + ' sold';
+                        },
+                    }, footerColor: INK2, footerFont: { weight: '400' } }),
+                },
+            },
+        });
+    }
+
+    // ---- Sold: profit by category (horizontal bars) ----
+    el = document.getElementById('chartSoldCategory');
+    if (el && data.soldCategories && data.soldCategories.length) {
+        var cats = data.soldCategories;
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: cats.map(function (c) { return c.name; }),
+                datasets: [Object.assign({ label: 'Profit', data: cats.map(function (c) { return c.profit; }),
+                    backgroundColor: COLORS.revenue, hoverBackgroundColor: hoverLift(COLORS.revenue) }, BAR)],
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                scales: { y: categoryAxis(), x: valueAxis(true) },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltip({ displayColors: false, callbacks: {
+                        label: function (c) { return money(c.parsed.x) + '  profit'; },
+                        afterLabel: function (c) {
+                            var cat = cats[c.dataIndex];
+                            return [money(cat.revenue) + ' revenue', money(cat.expenses) + ' expenses',
+                                    cat.count + ' item' + (cat.count === 1 ? '' : 's') + ' sold'];
+                        },
+                    } }),
+                },
+            },
+        });
+    }
+
+    // ---- Unsold: cost vs listing value by category ----
+    el = document.getElementById('chartUnsoldCategory');
+    if (el && data.unsoldCategories && data.unsoldCategories.length) {
+        var ucats = data.unsoldCategories;
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: ucats.map(function (c) { return c.name; }),
+                datasets: [
+                    Object.assign({ label: 'Item cost', data: ucats.map(function (c) { return c.cost; }),
+                        backgroundColor: COLORS.revenue, hoverBackgroundColor: hoverLift(COLORS.revenue) }, BAR),
+                    Object.assign({ label: 'Listing value', data: ucats.map(function (c) { return c.listing_value; }),
+                        backgroundColor: COLORS.expenses, hoverBackgroundColor: hoverLift(COLORS.expenses) }, BAR),
+                ],
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false, axis: 'y' },
+                datasets: { bar: { categoryPercentage: 0.7, barPercentage: 0.92 } },
+                scales: { y: categoryAxis(), x: valueAxis(true) },
+                plugins: {
+                    legend: legend(),
+                    tooltip: tooltip({ callbacks: {
+                        label: function (c) { return money(c.parsed.x) + '  ' + c.dataset.label; },
+                        footer: function (items) {
+                            var cat = ucats[items[0].dataIndex];
+                            return cat.count + ' item' + (cat.count === 1 ? '' : 's');
+                        },
+                    }, footerColor: INK2, footerFont: { weight: '400' } }),
+                },
+            },
+        });
+    }
+
+    // ---- Unsold: inventory age ----
+    el = document.getElementById('chartAge');
+    if (el && data.ageBuckets) {
+        var ages = data.ageBuckets;
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: ages.map(function (b) { return b.label; }),
+                datasets: [Object.assign({ label: 'Items', data: ages.map(function (b) { return b.count; }),
+                    backgroundColor: COLORS.revenue, hoverBackgroundColor: hoverLift(COLORS.revenue) }, BAR)],
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    x: categoryAxis(),
+                    y: valueAxis(false, function (v) { return Number.isInteger(v) ? v : null; }),
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: tooltip({ displayColors: false, callbacks: {
+                        label: function (c) { return c.parsed.y + ' item' + (c.parsed.y === 1 ? '' : 's'); },
+                        afterLabel: function (c) { return money(ages[c.dataIndex].cost) + ' invested'; },
+                    } }),
+                },
+            },
+        });
+    }
+})();
+</script>
+{% endblock %}

@@ -1,7 +1,9 @@
+import csv
+import io
 import os
 import uuid
-from datetime import date, datetime, timezone
-from flask import Flask, render_template, request, redirect, url_for, flash
+from datetime import date, datetime, time, timedelta, timezone
+from flask import Flask, Response, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from markupsafe import escape
 from sqlalchemy.exc import IntegrityError
@@ -106,6 +108,29 @@ class Item(db.Model):
     def profit_margin(self):
         revenue = self.total_revenue
         return (self.profit / revenue) * 100 if revenue > 0 else 0.0
+
+    @property
+    def start_date(self):
+        """The day the item started selling: date listed, or date added if never listed."""
+        stamp = self.date_listed or self.date_added
+        return stamp.date() if stamp else None
+
+    @property
+    def days_to_sell(self):
+        if self.date_sold and self.start_date:
+            return max((self.date_sold - self.start_date).days, 0)
+        return None
+
+    @property
+    def days_in_inventory(self):
+        if self.date_added:
+            return max((date.today() - self.date_added.date()).days, 0)
+        return None
+
+    @property
+    def potential_profit(self):
+        """Listing price minus item cost (before fees and shipping)."""
+        return (self.listing_price or 0.0) - (self.item_cost or 0.0)
 
 
 # ==============================================================================
@@ -305,6 +330,297 @@ def delete_image(image_id):
 def view_item(item_id):
     item = Item.query.get_or_404(item_id)
     return render_template('view_item.html', item=item)
+
+
+# ==============================================================================
+# Reports
+# ==============================================================================
+
+REPORT_TYPES = [('sold', 'Sold items'), ('unsold', 'Unsold items'), ('all', 'Sold & unsold')]
+
+DATE_PRESETS = [
+    ('all', 'All time'),
+    ('this_month', 'This month'),
+    ('last_30', 'Last 30 days'),
+    ('last_90', 'Last 90 days'),
+    ('this_year', 'This year'),
+    ('last_year', 'Last year'),
+    ('custom', 'Custom range'),
+]
+
+# Expense fields in display order (also the chart colour order)
+EXPENSE_FIELDS = [
+    ('item_cost', 'Item cost'),
+    ('shipping_cost', 'Shipping cost'),
+    ('tx_fees', 'Transaction fees'),
+    ('promo_fees', 'Promo fees'),
+    ('other_fees', 'Other fees'),
+    ('tax_out', 'Tax paid'),
+]
+
+UNCATEGORIZED = '__none__'
+
+AGE_BUCKETS = [(0, 30, '0–30 days'), (31, 60, '31–60 days'), (61, 90, '61–90 days'),
+               (91, 180, '91–180 days'), (181, None, '180+ days')]
+
+
+@app.template_filter('money')
+def money(value):
+    value = value or 0.0
+    return f"-${abs(value):,.2f}" if value < 0 else f"${value:,.2f}"
+
+
+def resolve_date_range(preset, start, end):
+    """Turns a preset name (or custom start/end strings) into (start_date, end_date)."""
+    today = date.today()
+    if preset == 'this_month':
+        return today.replace(day=1), today
+    if preset == 'last_30':
+        return today - timedelta(days=29), today
+    if preset == 'last_90':
+        return today - timedelta(days=89), today
+    if preset == 'this_year':
+        return date(today.year, 1, 1), today
+    if preset == 'last_year':
+        return date(today.year - 1, 1, 1), date(today.year - 1, 12, 31)
+    if preset == 'custom':
+        return parse_date(start), parse_date(end)
+    return None, None
+
+
+def get_report_filters(args):
+    report_type = args.get('type', 'sold')
+    if report_type not in dict(REPORT_TYPES):
+        report_type = 'sold'
+    preset = args.get('range', 'all')
+    if preset not in dict(DATE_PRESETS):
+        preset = 'all'
+    start, end = resolve_date_range(preset, args.get('start'), args.get('end'))
+    if start and end and start > end:
+        start, end = end, start
+    return {
+        'type': report_type,
+        'category': args.get('category', '').strip(),
+        'range': preset,
+        'start': start,
+        'end': end,
+    }
+
+
+def filter_by_category(query, category):
+    if category == UNCATEGORIZED:
+        return query.filter((Item.category.is_(None)) | (Item.category == ''))
+    if category:
+        return query.filter(Item.category == category)
+    return query
+
+
+def query_sold(filters):
+    query = filter_by_category(Item.query.filter(Item.status == 'Sold'), filters['category'])
+    if filters['start']:
+        query = query.filter(Item.date_sold >= filters['start'])
+    if filters['end']:
+        query = query.filter(Item.date_sold <= filters['end'])
+    return query.order_by(Item.date_sold.desc(), Item.id.desc()).all()
+
+
+def query_unsold(filters):
+    query = filter_by_category(
+        Item.query.filter((Item.status != 'Sold') | (Item.status.is_(None))), filters['category'])
+    # For unsold items the date range applies to the date they were added
+    if filters['start']:
+        query = query.filter(Item.date_added >= datetime.combine(filters['start'], time.min))
+    if filters['end']:
+        query = query.filter(Item.date_added < datetime.combine(filters['end'] + timedelta(days=1), time.min))
+    return query.order_by(Item.date_added.asc(), Item.id.asc()).all()
+
+
+def month_range(first, last):
+    """Yields (year, month) from first to last inclusive."""
+    year, month = first.year, first.month
+    while (year, month) <= (last.year, last.month):
+        yield year, month
+        month += 1
+        if month > 12:
+            year, month = year + 1, 1
+
+
+def category_name(item):
+    return item.category or 'Uncategorized'
+
+
+def build_sold_report(items):
+    revenue = sum(i.total_revenue for i in items)
+    expenses = sum(i.total_costs for i in items)
+    profit = revenue - expenses
+    days = [i.days_to_sell for i in items if i.days_to_sell is not None]
+
+    # Expense breakdown
+    breakdown = []
+    for field, label in EXPENSE_FIELDS:
+        amount = sum(getattr(i, field) or 0.0 for i in items)
+        breakdown.append({'label': label, 'amount': amount,
+                          'share': (amount / expenses * 100) if expenses > 0 else 0.0})
+
+    # Monthly totals, with empty months filled in so gaps show as zero
+    monthly = []
+    dated = [i for i in items if i.date_sold]
+    if dated:
+        by_month = {}
+        for i in dated:
+            key = (i.date_sold.year, i.date_sold.month)
+            m = by_month.setdefault(key, {'count': 0, 'revenue': 0.0, 'expenses': 0.0})
+            m['count'] += 1
+            m['revenue'] += i.total_revenue
+            m['expenses'] += i.total_costs
+        first = min(i.date_sold for i in dated)
+        last = max(i.date_sold for i in dated)
+        for year, month in month_range(first, last):
+            m = by_month.get((year, month), {'count': 0, 'revenue': 0.0, 'expenses': 0.0})
+            monthly.append({
+                'label': date(year, month, 1).strftime('%b %Y'),
+                'count': m['count'],
+                'revenue': round(m['revenue'], 2),
+                'expenses': round(m['expenses'], 2),
+                'profit': round(m['revenue'] - m['expenses'], 2),
+            })
+
+    # By category
+    cats = {}
+    for i in items:
+        c = cats.setdefault(category_name(i), {'count': 0, 'revenue': 0.0, 'expenses': 0.0})
+        c['count'] += 1
+        c['revenue'] += i.total_revenue
+        c['expenses'] += i.total_costs
+    by_category = []
+    for name, c in cats.items():
+        p = c['revenue'] - c['expenses']
+        by_category.append({
+            'name': name, 'count': c['count'],
+            'revenue': round(c['revenue'], 2), 'expenses': round(c['expenses'], 2), 'profit': round(p, 2),
+            'margin': (p / c['revenue'] * 100) if c['revenue'] > 0 else 0.0,
+        })
+    by_category.sort(key=lambda c: c['profit'], reverse=True)
+
+    return {
+        'rows': items,
+        'count': len(items),
+        'revenue': revenue,
+        'expenses': expenses,
+        'profit': profit,
+        'margin': (profit / revenue * 100) if revenue > 0 else 0.0,
+        'avg_profit': (profit / len(items)) if items else 0.0,
+        'avg_days_to_sell': (sum(days) / len(days)) if days else None,
+        'breakdown': breakdown,
+        'totals': {f: sum(getattr(i, f) or 0.0 for i in items) for f in ('item_price', 'shipping_paid', 'tax_in')},
+        'monthly': monthly,
+        'by_category': by_category,
+    }
+
+
+def build_unsold_report(items):
+    cost = sum(i.item_cost or 0.0 for i in items)
+    listing_value = sum(i.listing_price or 0.0 for i in items)
+    ages = [i.days_in_inventory for i in items if i.days_in_inventory is not None]
+
+    cats = {}
+    for i in items:
+        c = cats.setdefault(category_name(i), {'count': 0, 'cost': 0.0, 'listing_value': 0.0})
+        c['count'] += 1
+        c['cost'] += i.item_cost or 0.0
+        c['listing_value'] += i.listing_price or 0.0
+    by_category = [{'name': n, 'count': c['count'], 'cost': round(c['cost'], 2),
+                    'listing_value': round(c['listing_value'], 2),
+                    'potential': round(c['listing_value'] - c['cost'], 2)} for n, c in cats.items()]
+    by_category.sort(key=lambda c: c['cost'], reverse=True)
+
+    age_buckets = []
+    for low, high, label in AGE_BUCKETS:
+        in_bucket = [i for i in items if i.days_in_inventory is not None
+                     and i.days_in_inventory >= low and (high is None or i.days_in_inventory <= high)]
+        age_buckets.append({'label': label, 'count': len(in_bucket),
+                            'cost': round(sum(i.item_cost or 0.0 for i in in_bucket), 2)})
+
+    # Oldest stock first
+    items = sorted(items, key=lambda i: i.days_in_inventory or 0, reverse=True)
+
+    return {
+        'rows': items,
+        'count': len(items),
+        'listed': sum(1 for i in items if i.status == 'Listed'),
+        'unlisted': sum(1 for i in items if i.status != 'Listed'),
+        'cost': cost,
+        'listing_value': listing_value,
+        'potential': listing_value - cost,
+        'avg_age': (sum(ages) / len(ages)) if ages else None,
+        'by_category': by_category,
+        'age_buckets': age_buckets,
+    }
+
+
+def report_category_options():
+    used = {c[0] for c in db.session.query(Item.category).distinct().all() if c[0]}
+    return CATEGORIES + sorted(used - set(CATEGORIES))
+
+
+@app.route('/reports')
+def reports():
+    filters = get_report_filters(request.args)
+    sold = build_sold_report(query_sold(filters)) if filters['type'] in ('sold', 'all') else None
+    unsold = build_unsold_report(query_unsold(filters)) if filters['type'] in ('unsold', 'all') else None
+
+    chart_data = {}
+    if sold:
+        chart_data['monthly'] = sold['monthly']
+        chart_data['soldCategories'] = sold['by_category']
+    if unsold:
+        chart_data['unsoldCategories'] = unsold['by_category']
+        chart_data['ageBuckets'] = unsold['age_buckets']
+
+    return render_template(
+        'reports.html', filters=filters, sold=sold, unsold=unsold, chart_data=chart_data,
+        report_types=REPORT_TYPES, date_presets=DATE_PRESETS,
+        categories=report_category_options(), uncategorized=UNCATEGORIZED,
+    )
+
+
+@app.route('/reports/export')
+def export_report():
+    """Downloads the filtered report items as a CSV file (opens in Excel)."""
+    filters = get_report_filters(request.args)
+    items = []
+    if filters['type'] in ('sold', 'all'):
+        items += query_sold(filters)
+    if filters['type'] in ('unsold', 'all'):
+        items += query_unsold(filters)
+
+    def fmt_date(value):
+        return value.strftime('%Y-%m-%d') if value else ''
+
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(['SKU', 'Title', 'Category', 'Condition', 'Status', 'Date Added', 'Date Listed',
+                     'Date Sold', 'Days To Sell', 'Days In Inventory', 'Listing Price', 'Item Price',
+                     'Shipping Paid', 'Tax In', 'Total Revenue', 'TX Fees', 'Promo Fees', 'Other Fees',
+                     'Item Cost', 'Shipping Cost', 'Tax Out', 'Total Costs', 'Profit', 'Margin %'])
+    for i in items:
+        sold_item = i.status == 'Sold'
+        writer.writerow([
+            i.sku, i.title, i.category or '', i.condition or '', i.status or '',
+            fmt_date(i.date_added), fmt_date(i.date_listed), fmt_date(i.date_sold),
+            i.days_to_sell if sold_item and i.days_to_sell is not None else '',
+            '' if sold_item or i.days_in_inventory is None else i.days_in_inventory,
+            f"{i.listing_price or 0:.2f}", f"{i.item_price or 0:.2f}", f"{i.shipping_paid or 0:.2f}",
+            f"{i.tax_in or 0:.2f}", f"{i.total_revenue:.2f}", f"{i.tx_fees or 0:.2f}",
+            f"{i.promo_fees or 0:.2f}", f"{i.other_fees or 0:.2f}", f"{i.item_cost or 0:.2f}",
+            f"{i.shipping_cost or 0:.2f}", f"{i.tax_out or 0:.2f}", f"{i.total_costs:.2f}",
+            f"{i.profit:.2f}", f"{i.profit_margin:.1f}",
+        ])
+
+    filename = f"inventory-report-{filters['type']}-{date.today().isoformat()}.csv"
+    # utf-8-sig so Excel reads accented characters correctly
+    return Response(out.getvalue().encode('utf-8-sig'), mimetype='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename="{filename}"'})
 
 
 if __name__ == '__main__':

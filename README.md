@@ -40,6 +40,7 @@ ebay-inventory-dashboard/
 ├── ebay-app.service         # Sample systemd service file (edit paths before use)
 ├── .gitignore               # Ignores the database, virtual environment and uploaded photos
 ├── README.md
+├── LICENSE                  # MIT License
 │
 ├── data/
 │   └── ebay_categories_ca.txt  # eBay Canada categories and IDs (from ebay.ca/n/all-categories)
@@ -172,3 +173,15 @@ SUB|Laptops & Netbooks|175672
 ```
 
 Each `TOP` line is a top-level category and the `SUB` lines under it are its sub-categories, with the eBay category ID last. Compare against https://www.ebay.ca/n/all-categories, edit the file, and restart the app. Items store the full category path (e.g. `Computers/Tablets & Networking > Laptops & Netbooks`), so if a category is renamed, existing items keep the old name and show it as an "old category" until you pick a new one.
+
+---
+
+## License
+
+This project is released under the [MIT License](LICENSE).
+
+Third-party components included in this repository keep their own licenses:
+
+- **Chart.js** 4.4.1 (`static/vendor/chart.umd.min.js`) – MIT License, © Chart.js Contributors. The license notice is kept at the top of the file.
+
+The eBay category names and IDs in `data/ebay_categories_ca.txt` come from eBay (https://www.ebay.ca/n/all-categories) and are not covered by this project's license. eBay is a trademark of eBay Inc.; this project is not affiliated with or endorsed by eBay.

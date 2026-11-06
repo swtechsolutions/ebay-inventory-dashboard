@@ -70,12 +70,6 @@
                 </select>
             </div>
 
-            <!-- Date Sold Readout Field -->
-            <div>
-                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Date Sold</label>
-                <input type="text" readonly value="{{ item.date_sold.strftime('%b %d, %Y') if item.date_sold else 'Not Sold' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f3f4f6; color: #4b5563; cursor: not-allowed;">
-            </div>
-
             <!-- Description Text Area -->
             <div style="grid-column: span 2;">
                 <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Item Description</label>
@@ -98,6 +92,7 @@
             <div>
                 <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Date Sold</label>
                 <input type="date" name="date_sold" value="{{ item.date_sold.strftime('%Y-%m-%d') if item.date_sold else '' }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
+                <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0;">Only used when Status is Sold. Leave blank to use today's date.</p>
             </div>
         </div>
 

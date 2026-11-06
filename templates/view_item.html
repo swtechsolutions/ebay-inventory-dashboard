@@ -95,15 +95,15 @@
 
             <textarea id="ebayHtmlCode" rows="10" readonly style="width: 100%; padding: 12px; font-family: monospace; font-size: 12px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f9fafb;">
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-            <h2 style="color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px;">{{ item.title }}</h2>
-            <p><strong>Condition:</strong> {{ item.condition or 'Used' }}</p>
+            <h2 style="color: #1e3a8a; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px;">{{ item.title|ebay_html }}</h2>
+            <p><strong>Condition:</strong> {{ (item.condition or 'Used')|ebay_html }}</p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
             <h3 style="color: #374151;">Item Description</h3>
             <div style="font-size: 14px; line-height: 1.6; color: #4b5563;">
-                {{ item.description or 'No additional description provided.' }}
+                {{ (item.description or 'No additional description provided.')|ebay_html }}
             </div>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #9ca3af;">SKU: {{ item.sku }}</p>
+            <p style="font-size: 12px; color: #9ca3af;">SKU: {{ item.sku|ebay_html }}</p>
         </div>
             </textarea>
         </div>

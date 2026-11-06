@@ -1,9 +1,10 @@
 import os
-from datetime import datetime
+import uuid
+from datetime import date, datetime, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
-from datetime import datetime, timezone
+from markupsafe import escape
+from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
@@ -61,11 +62,9 @@ class Item(db.Model):
     # New Date Columns
     date_added = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     date_listed = db.Column(db.DateTime, nullable=True)
-    date_sold = db.Column(db.DateTime, nullable=True)
-    
-    # Restored Fields
+    date_sold = db.Column(db.Date, nullable=True)  # Date only (matches existing DB schema)
+
     listing_price = db.Column(db.Float, default=0.0)
-    date_sold = db.Column(db.Date, nullable=True)
 
     # Relationship for Multiple Images
     images = db.relationship('ItemImage', backref='item', cascade='all, delete-orphan', lazy=True)
@@ -128,17 +127,50 @@ def parse_date(val):
 def save_images(file_list, item_id):
     """Saves multiple files to static/uploads and links them to the Item."""
     for file_obj in file_list:
-        if file_obj and file_obj.filename != '':
+        if file_obj and file_obj.filename and '.' in file_obj.filename:
             ext = file_obj.filename.rsplit('.', 1)[-1].lower()
             if ext in ALLOWED_EXTENSIONS:
-                filename = secure_filename(file_obj.filename)
-                unique_filename = f"{int(datetime.now().timestamp())}_{filename}"
+                # Random name so uploads never collide or lose their extension
+                unique_filename = f"{uuid.uuid4().hex}.{ext}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
                 file_obj.save(file_path)
                 
                 # Save database record
                 new_image = ItemImage(item_id=item_id, image_path=f"uploads/{unique_filename}")
                 db.session.add(new_image)
+
+
+def sku_taken(sku, exclude_id=None):
+    """True if another item already uses this SKU."""
+    with db.session.no_autoflush:
+        query = Item.query.filter(Item.sku == sku)
+        if exclude_id is not None:
+            query = query.filter(Item.id != exclude_id)
+        return db.session.query(query.exists()).scalar()
+
+
+def apply_form(item, form):
+    """Copies the editable text and money fields from a submitted form onto an Item."""
+    item.sku = (form.get('sku') or '').strip()
+    item.title = (form.get('title') or '').strip()
+    item.category = form.get('category')
+    item.condition = form.get('condition')
+    item.description = form.get('description')
+    for field in ('listing_price', 'item_price', 'shipping_paid', 'tax_in',
+                  'tx_fees', 'promo_fees', 'other_fees', 'item_cost',
+                  'shipping_cost', 'tax_out'):
+        # Fields missing from a form (e.g. revenue fields on the add page) stay unchanged
+        if field in form:
+            setattr(item, field, parse_float(form.get(field)))
+
+
+@app.template_filter('ebay_html')
+def ebay_html(text):
+    """Turns plain text into HTML for the eBay description: escapes it and keeps line breaks."""
+    if not text:
+        return ''
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    return str(escape(text)).replace('\n', '<br>\n')
 
 
 # ==============================================================================
@@ -167,45 +199,34 @@ def index():
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
     if request.method == 'POST':
-        
-        status = request.form.get('status', 'Unlisted')
-        
-        # Set timestamps based on initial status
-        now = datetime.now(timezone.utc)
-        date_listed = now if status == 'Listed' else None
-        date_sold = now if status == 'Sold' else None
-        
-        new_item = Item(
-            sku=request.form.get('sku'),
-            title=request.form.get('title'),
-            category=request.form.get('category'),
-            condition=request.form.get('condition'),
-            description=request.form.get('description'),
-            status = request.form.get('status', 'Unlisted'),
-            date_listed = date_listed,
-            date_sold = date_sold,
-            listing_price=float(request.form.get('listing_price', 0.0) or 0.0),
-            item_price=parse_float(request.form.get('item_price')),
-            shipping_paid=parse_float(request.form.get('shipping_paid')),
-            tax_in=parse_float(request.form.get('tax_in')),
-            tx_fees=parse_float(request.form.get('tx_fees')),
-            promo_fees=parse_float(request.form.get('promo_fees')),
-            other_fees=parse_float(request.form.get('other_fees')),
-            item_cost=float(request.form.get('item_cost', 0.0) or 0.0),
-            shipping_cost=parse_float(request.form.get('shipping_cost')),
-            tax_out=parse_float(request.form.get('tax_out'))
-        )
+        status = request.form.get('status', 'Unlisted').strip()
+
+        new_item = Item(status=status)
+        apply_form(new_item, request.form)
+
+        # Set dates based on initial status
+        new_item.date_listed = datetime.now(timezone.utc) if status == 'Listed' else None
+        new_item.date_sold = date.today() if status == 'Sold' else None
+
+        if sku_taken(new_item.sku):
+            flash(f"SKU '{new_item.sku}' is already used by another item. Please choose a different SKU.", 'error')
+            return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS,
+                                   form=request.form), 400
+
         db.session.add(new_item)
-        db.session.flush()  # Gets the new item ID before commit
+        try:
+            db.session.flush()  # Gets the new item ID before commit
+            save_images(request.files.getlist('images'), new_item.id)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash(f"SKU '{new_item.sku}' is already used by another item. Please choose a different SKU.", 'error')
+            return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS,
+                                   form=request.form), 400
 
-        # Handle multiple uploaded image files
-        uploaded_files = request.files.getlist('images')
-        save_images(uploaded_files, new_item.id)
-
-        db.session.commit()
         return redirect(url_for('index'))
 
-    return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS)
+    return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS, form={})
 
 
 @app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
@@ -228,39 +249,37 @@ def edit_item(item_id):
 
         # Handle Date Sold
         if new_status == 'Sold':
-            # Stamp date_sold if it isn't already set
-            if item.date_sold is None or old_status != 'Sold':
-                item.date_sold = now
+            picked_date = parse_date(request.form.get('date_sold'))
+            if picked_date:
+                # Use the date chosen in the form
+                item.date_sold = picked_date
+            elif item.date_sold is None or old_status != 'Sold':
+                # No date chosen: stamp today when the item becomes Sold
+                item.date_sold = date.today()
         else:
             # Clear date_sold if item status moves away from Sold
             item.date_sold = None
-        
-        item.sku = request.form.get('sku')
-        item.title = request.form.get('title')
-        item.category = request.form.get('category')
-        item.condition = request.form.get('condition')
-        item.description = request.form.get('description')
-        item.status = request.form.get('status')
+
         item.status = new_status
-        item.listing_price = parse_float(request.form.get('listing_price'))
-        item.date_sold = item.date_sold 
+        apply_form(item, request.form)
 
-        item.item_price = parse_float(request.form.get('item_price'))
-        item.shipping_paid = parse_float(request.form.get('shipping_paid'))
-        item.tax_in = parse_float(request.form.get('tax_in'))
+        if sku_taken(item.sku, exclude_id=item.id):
+            flash(f"SKU '{item.sku}' is already used by another item. Please choose a different SKU.", 'error')
+            # Re-show the form with the user's edits, then discard them
+            with db.session.no_autoflush:
+                page = render_template('edit_item.html', item=item, categories=CATEGORIES, conditions=CONDITIONS)
+            db.session.rollback()
+            return page, 400
 
-        item.tx_fees = parse_float(request.form.get('tx_fees'))
-        item.promo_fees = parse_float(request.form.get('promo_fees'))
-        item.other_fees = parse_float(request.form.get('other_fees'))
-        item.item_cost = parse_float(request.form.get('item_cost'))
-        item.shipping_cost = parse_float(request.form.get('shipping_cost'))
-        item.tax_out = parse_float(request.form.get('tax_out'))
+        try:
+            # Add newly uploaded images to the existing set
+            save_images(request.files.getlist('images'), item.id)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash(f"SKU '{request.form.get('sku', '').strip()}' is already used by another item. Please choose a different SKU.", 'error')
+            return redirect(url_for('edit_item', item_id=item_id))
 
-        # Add newly uploaded images to the existing set
-        uploaded_files = request.files.getlist('images')
-        save_images(uploaded_files, item.id)
-
-        db.session.commit()
         return redirect(url_for('view_item', item_id=item.id))
 
     return render_template('edit_item.html', item=item, categories=CATEGORIES, conditions=CONDITIONS)

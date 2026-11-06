@@ -122,6 +122,20 @@ Press `Ctrl+C` in the terminal to stop the app.
 
 ---
 
+## Sample Data
+
+To try out the app or test changes, add 30 sample items (sold, listed and unlisted, across many eBay categories):
+
+```bash
+python3 seed_sample_data.py            # add the sample items
+python3 seed_sample_data.py --reset    # remove and re-add them (dates recalculated from today)
+python3 seed_sample_data.py --remove   # remove all sample items
+```
+
+Sample items have SKUs starting with `DEMO-`; the script never changes any other items.
+
+---
+
 ## Updating to the Latest Version
 
 From the project folder, with the virtual environment activated:

@@ -1,0 +1,514 @@
+# eBay Canada (ebay.ca) categories: top level and second level, with eBay category IDs.
+# Source: https://www.ebay.ca/n/all-categories (retrieved 2026-11-06).
+# Format:  TOP|<name>|<id>   followed by its   SUB|<name>|<id>   lines.
+# Lines starting with # are ignored. eBay's internal test category is left out.
+TOP|Collectibles|1
+SUB|Advertising|34
+SUB|Comic Books & Memorabilia|63
+SUB|Sewing (1930-Now)|113
+SUB|Paper|124
+SUB|Disneyana|137
+SUB|Science Fiction & Horror|152
+SUB|Science & Medicine (1930-Now)|412
+SUB|Transportation|417
+SUB|Breweriana, Beer|562
+SUB|Tobacciana|593
+SUB|Vanity, Perfume & Shaving|597
+SUB|Casino|898
+SUB|Holiday & Seasonal|907
+SUB|Postcards & Supplies|914
+SUB|Pens & Writing Instruments|966
+SUB|Animals|1335
+SUB|Knives, Swords & Blades|1401
+SUB|Lamps, Lighting|1404
+SUB|Metalware|1430
+SUB|Religion & Spirituality|1446
+SUB|Credit, Charge Cards|1462
+SUB|Rocks, Fossils & Minerals|3213
+SUB|Cultures & Ethnicities|3913
+SUB|Fantasy, Mythical & Magic|10860
+SUB|Animation Art & Merchandise|13658
+SUB|Decorative Collectibles|13777
+SUB|Tools, Hardware & Locks|13849
+SUB|Kitchen & Home|13905
+SUB|Militaria|13956
+SUB|Pez, Keychains, Promo Glasses|14005
+SUB|Autographs|14429
+SUB|Bottles & Insulators|29797
+SUB|Radio, Phonograph, TV, Phone|29832
+SUB|Pinbacks & Lunchboxes|39507
+SUB|Wholesale Lots|45058
+SUB|Phone Cards|60811
+SUB|Arcade, Jukeboxes & Pinball|66502
+SUB|Banks, Registers & Vending|66503
+SUB|Vintage, Retro, Mid-Century|69851
+SUB|Beads|156277
+SUB|Souvenirs & Travel Memorabilia|165800
+SUB|Non-Sport Trading Cards|182982
+SUB|Historical Memorabilia|259135
+SUB|Baby & Nursery|261595
+SUB|Jewelry|261650
+SUB|Linens & Textiles|261716
+SUB|Emerging NFTs|262050
+SUB|Non-Sport Stickers, Collections & Albums|262344
+SUB|Photographic Images|262413
+SUB|Collectible Figures & Supplies|263076
+TOP|Everything Else|99
+SUB|Weird Stuff|1466
+SUB|Career Development & Education|3143
+SUB|Metaphysical|19266
+SUB|eBay User Tools|20924
+SUB|Genealogy|20925
+SUB|Every Other Thing|88433
+SUB|Funeral & Cemetery|88739
+SUB|Personal Development|102329
+SUB|Information Products|102480
+SUB|Personal Security|102535
+SUB|Religious Products & Supplies|102545
+SUB|Reward Points & Incentives|102553
+SUB|eBay Programs|175848
+SUB|eBay Special Offers|177600
+TOP|Toys & Hobbies|220
+SUB|Diecast & Toy Vehicles|222
+SUB|Games|233
+SUB|Action Figures & Accessories|246
+SUB|Stuffed Animals|436
+SUB|Vintage & Antique Toys|717
+SUB|Models & Kits|1188
+SUB|Collectible Card Games|2536
+SUB|Radio Control & Control Line|2562
+SUB|Puzzles|2613
+SUB|Slot Cars|2616
+SUB|Toy Soldiers|2631
+SUB|Educational|11731
+SUB|Outdoor Toys & Structures|11743
+SUB|Classic Toys|19016
+SUB|Electronic, Battery & Wind-Up|19071
+SUB|Fast Food & Cereal Premiums|19077
+SUB|Preschool Toys & Pretend Play|19169
+SUB|Robots, Monsters & Space Toys|19192
+SUB|Wholesale Lots|40149
+SUB|Beanbag Plush|49019
+SUB|Marbles|58799
+SUB|Model Railroads & Trains|180250
+SUB|Building Toys|183446
+TOP|Dolls & Bears|237
+SUB|Dolls, Clothing & Accessories|238
+SUB|Dollhouse Miniatures|1202
+SUB|Paper Dolls, Clothes & Accessories|2440
+SUB|Bears, Clothing & Accessories|262353
+TOP|Stamps|260
+SUB|United States|261
+SUB|Canada|3478
+SUB|Great Britain|3499
+SUB|Europe|4742
+SUB|Topical Stamps|4752
+SUB|Specialty Philately|7898
+SUB|British Colonies & Territories|65174
+SUB|Other Stamps|170137
+SUB|Caribbean|179377
+SUB|Asia|181416
+SUB|Latin America|181417
+SUB|Worldwide|181420
+SUB|Publications & Supplies|181421
+SUB|Middle East|181422
+SUB|Africa|181423
+SUB|Australia & Oceania|181424
+TOP|Books & Magazines|267
+SUB|Magazines|280
+SUB|Antiquarian & Collectible|29223
+SUB|Audiobooks|29792
+SUB|Accessories|45110
+SUB|Catalogs|118254
+SUB|Textbooks, Education & Reference|184644
+SUB|Books|261186
+TOP|Jewellery & Watches|281
+SUB|Loose Diamonds & Gemstones|491
+SUB|Fine Jewellery|4196
+SUB|Men's Jewellery|10290
+SUB|Fashion Jewellery|10968
+SUB|Children's Jewellery|84605
+SUB|Engagement & Wedding|91427
+SUB|Handcrafted & Artisan Jewelry|110633
+SUB|Jewelry Care, Design & Repair|164352
+SUB|Watches, Parts & Accessories|260324
+SUB|Body Jewelry|261986
+SUB|Loose Beads|261997
+SUB|Jewelry Mixed Lots|262022
+SUB|Other Jewelry|262023
+SUB|Vintage & Antique Jewelry|262024
+SUB|Ethnic, Regional & Tribal|262025
+TOP|Consumer Electronics|293
+SUB|Radio Communication|1500
+SUB|Vehicle Electronics & GPS|3270
+SUB|Home Telephones & Accessories|3286
+SUB|Portable Audio & Headphones|15052
+SUB|TV, Video & Home Audio|32852
+SUB|Multipurpose Batteries & Power|48446
+SUB|Other Consumer Electronics|175837
+SUB|Smart Glasses|178894
+SUB|Virtual Reality|183067
+SUB|Vintage Electronics|183077
+SUB|Surveillance & Smart Home Electronics|185067
+SUB|Mixed Lots|259701
+TOP|Specialty Services|316
+SUB|Other Specialty Services|317
+SUB|Printing & Personalization|20943
+SUB|Web & Computer Services|47104
+SUB|Restoration & Repair|47119
+SUB|Artistic Services|47126
+SUB|Graphic & Logo Design|47131
+SUB|Custom Clothing & Jewellery|50343
+SUB|eBay Auction Services|50349
+SUB|Media Editing & Duplication|50355
+SUB|Home Improvement Services|170048
+TOP|Art|550
+SUB|Fine Art Prints|360
+SUB|Paintings|551
+SUB|Fine Art Drawings|552
+SUB|Fine Art Sculptures|553
+SUB|Mixed Media Art & Collage Art|554
+SUB|Fine Art Photographs|2211
+SUB|Other Art|20158
+SUB|Art Posters|28009
+SUB|Textile Art & Fibre Art|156196
+SUB|Art NFTs|262051
+TOP|Musical Instruments & Gear|619
+SUB|Other Musical Instruments|308
+SUB|Guitars & Basses|3858
+SUB|Wind & Woodwind|10181
+SUB|Stage Lighting & Effects|12922
+SUB|Brass|16212
+SUB|DJ Equipment|48458
+SUB|Wholesale Lots|52555
+SUB|Karaoke Entertainment|175696
+SUB|General Accessories|180008
+SUB|Pianos, Keyboards & Organs|180010
+SUB|Percussion|180012
+SUB|Pro Audio Equipment|180014
+SUB|Sheet Music & Song Books|180015
+SUB|String|180016
+SUB|Vintage Musical Instruments|181162
+SUB|Instruction Books, CDs & Video|182150
+TOP|Cameras & Photo|625
+SUB|Vintage Movie & Photography|3326
+SUB|Camera Manuals & Guides|4684
+SUB|Camcorders|11724
+SUB|Camera, Drone & Photo Accessories|15200
+SUB|Video Production & Editing|21162
+SUB|Other Cameras & Photo|27432
+SUB|Binoculars & Telescopes|28179
+SUB|Lighting & Studio|30078
+SUB|Tripods & Supports|30090
+SUB|Digital Cameras|31388
+SUB|Mixed Lots|45089
+SUB|Flashes & Flash Accessories|64353
+SUB|Film Photography|69323
+SUB|Lenses & Filters|78997
+SUB|Digital Photo Frames|150044
+SUB|Camera Drones|179697
+SUB|Replacement Parts & Tools|182074
+TOP|Pottery & Glass|870
+SUB|Price Guides & Publications|170129
+SUB|Drinkware & Barware|262359
+SUB|Decorative Cookware, Dinnerware & Serveware|262364
+SUB|Other Pottery & Glass|262365
+SUB|Decorative Pottery & Glassware|262384
+SUB|Lamps, Lighting|262410
+TOP|Sporting Goods|888
+SUB|Other Sporting Goods|310
+SUB|Fishing|1492
+SUB|Golf|1513
+SUB|Cycling|7294
+SUB|Hunting|7301
+SUB|Fitness, Running & Yoga|15273
+SUB|Camping & Hiking|16034
+SUB|Winter Sports|36259
+SUB|Indoor Games|36274
+SUB|Wholesale Lots|40146
+SUB|Outdoor Sports|159043
+SUB|Team Sports|159049
+SUB|Tennis & Racquet Sports|159134
+SUB|Water Sports|159136
+SUB|Boxing, Martial Arts & MMA|179767
+TOP|Video Games & Consoles|1249
+SUB|Video Game Merchandise|38583
+SUB|Video Game Accessories|54968
+SUB|Video Game Consoles|139971
+SUB|Video Games|139973
+SUB|Strategy Guides & Cheats|156595
+SUB|Prepaid Gaming Cards|156597
+SUB|Replacement Parts & Tools|171833
+SUB|Manuals, Inserts & Box Art|182174
+SUB|Original Game Cases & Boxes|182175
+SUB|Mixed Lots|260000
+TOP|Pet Supplies|1281
+SUB|Other Pet Supplies|301
+SUB|Reptile Supplies|1285
+SUB|Bird Supplies|20734
+SUB|Cat Supplies|20737
+SUB|Dog Supplies|20742
+SUB|Fish & Aquariums|20754
+SUB|Wholesale Lots|48760
+SUB|Pet Memorials & Urns|116391
+SUB|Backyard Poultry Supplies|177801
+SUB|Cameras|259318
+SUB|Trackers|259319
+SUB|Small Animal Supplies|259320
+TOP|Tickets & Experiences|1305
+SUB|Other Tickets & Experiences|1306
+SUB|Special Experiences|170591
+SUB|Theme Park & Club Passes|170594
+SUB|Sports Tickets|173633
+SUB|Concert Tickets|173634
+SUB|Theatre Tickets|173635
+SUB|Parking Passes|178892
+TOP|Baby|2984
+SUB|Other Baby|1261
+SUB|Toys for Baby|19068
+SUB|Bathing & Grooming|20394
+SUB|Feeding|20400
+SUB|Nursery Bedding|20416
+SUB|Nursery Furniture|20422
+SUB|Baby Safety & Health|20433
+SUB|Potty Training|37631
+SUB|Diapering|45455
+SUB|Wholesale Lots|48757
+SUB|Car Safety Seats|66692
+SUB|Nursery Décor|66697
+SUB|Strollers & Accessories|66698
+SUB|Baby Gear|100223
+SUB|Carriers, Slings & Backpacks|100982
+SUB|Keepsakes & Baby Announcements|117388
+TOP|Travel|3252
+SUB|Other Travel|1310
+SUB|Airline|3253
+SUB|Cruises|16078
+SUB|Luggage|16080
+SUB|Lodging|16123
+SUB|Vacation Packages|29578
+SUB|Travel Accessories|93838
+SUB|Rail|98982
+SUB|Car Rental|147399
+SUB|Campground & RV Parks|164802
+SUB|Maps|164803
+SUB|Luggage Accessories|173520
+SUB|Vintage Luggage & Travel Accs|183477
+TOP|Automotive|6000
+SUB|Cars & Trucks|6001
+SUB|Motorcycles|6024
+SUB|Parts & Accessories|6028
+SUB|Other Vehicles & Trailers|6038
+SUB|Boats|26429
+SUB|Automotive Tools & Supplies|34998
+SUB|Powersports|66466
+SUB|Safety & Security Accessories|262266
+TOP|Real Estate|10542
+SUB|Other Real Estate|1607
+SUB|Residential|12605
+SUB|Commercial|15825
+SUB|Land|15841
+SUB|Timeshares for Sale|15897
+SUB|Manufactured Homes|94825
+TOP|Coins & Paper Money|11116
+SUB|Coins: US|253
+SUB|Coins: World|256
+SUB|Coins: Canada|3377
+SUB|Paper Money: World|3411
+SUB|Paper Money: US|3412
+SUB|Stocks & Bonds, Scripophily|3444
+SUB|Exonumia|3452
+SUB|Coins: Ancient|4733
+SUB|Coins: Medieval|18466
+SUB|Bullion|39482
+SUB|Publications & Supplies|83274
+SUB|Other Coins & Paper Money|169305
+TOP|Movies & TV|11232
+SUB|VHS Tapes|309
+SUB|Laserdiscs|381
+SUB|DVDs & Blu-ray Discs|617
+SUB|Other Formats|41676
+SUB|Video Media Accessories|52554
+SUB|Film Stock|63821
+SUB|UMDs|132975
+SUB|Movie NFTs|262053
+TOP|Music|11233
+SUB|Other Formats|618
+SUB|Audio Media Accessories|52473
+SUB|Cassettes|176983
+SUB|CDs|176984
+SUB|Vinyl Records|176985
+SUB|Music NFTs|262054
+TOP|Clothing, Shoes & Accessories|11450
+SUB|Kids|171146
+SUB|Women|260010
+SUB|Men|260012
+SUB|Baby|260018
+SUB|Specialty|260033
+TOP|Home & Garden|11700
+SUB|Household Supplies & Cleaning|299
+SUB|Tools & Workshop Equipment|631
+SUB|Furniture|3197
+SUB|Home Décor|10033
+SUB|Wedding Supplies|11827
+SUB|Food & Beverages|14308
+SUB|Greeting Cards & Party Supply|16086
+SUB|School Supplies|16092
+SUB|Bedding|20444
+SUB|Pillows|20563
+SUB|Rugs & Carpets|20571
+SUB|Kitchen, Dining & Bar|20625
+SUB|Lamps, Lighting & Ceiling Fans|20697
+SUB|Major Appliances|20710
+SUB|Bath|26677
+SUB|Wholesale Lots|31605
+SUB|Window Treatments & Hardware|63514
+SUB|Home Improvement|159907
+SUB|Yard, Garden & Outdoor Living|159912
+SUB|Holiday & Seasonal Décor|170090
+SUB|Kids & Teens at Home|176988
+SUB|Kitchen Fixtures|177073
+SUB|Fresh Cut Flowers|178069
+SUB|Other Home & Garden|181076
+SUB|Candles & Home Fragrance|262975
+TOP|Business & Industrial|12576
+SUB|Agriculture & Forestry|11748
+SUB|Websites & Businesses for Sale|11759
+SUB|CNC, Metalworking & Manufacturing|11804
+SUB|Healthcare, Lab & Dental|11815
+SUB|Restaurant & Food Service|11874
+SUB|Retail & Services|11890
+SUB|Facility Maintenance & Safety|11897
+SUB|Office|25298
+SUB|Material Handling|26221
+SUB|Printing & Graphic Arts|26238
+SUB|Other Business & Industrial|26261
+SUB|Building Materials & Supplies|41498
+SUB|Industrial Automation & Motion Controls|42892
+SUB|HVAC & Refrigeration|42909
+SUB|Cleaning & Janitorial Supplies|46534
+SUB|Modular & Prefabricated Buildings|55805
+SUB|Light Equipment & Tools|61573
+SUB|Electrical Equipment & Supplies|92074
+SUB|Adhesives, Sealants & Tapes|109471
+SUB|Fuel & Energy|159693
+SUB|Test, Measurement & Inspection|181939
+SUB|Fasteners & Hardware|183900
+SUB|Hydraulics, Pneumatics, Pumps & Plumbing|183978
+SUB|Heavy Equipment, Parts & Attachments|257887
+TOP|Crafts|14339
+SUB|Stamping & Embossing|3122
+SUB|Art Supplies|11783
+SUB|Scrapbooking & Paper Crafts|11788
+SUB|Multi-Purpose Craft Supplies|28102
+SUB|Leathercrafts|28131
+SUB|Fabric|28162
+SUB|Beads & Jewellery Making|31723
+SUB|Wholesale Lots|45074
+SUB|Handcrafted & Finished Pieces|71183
+SUB|Other Crafts|75576
+SUB|Kids' Crafts|116652
+SUB|Home Arts & Crafts|160667
+SUB|Needlecrafts & Yarn|160706
+SUB|Sewing|160737
+SUB|Glass & Mosaics|163778
+SUB|Fabric Painting & Decorating|183118
+SUB|Sculpting, Molding & Ceramics|183302
+TOP|Cell Phones & Accessories|15032
+SUB|Cell Phones & Smartphones|9355
+SUB|Cell Phone Accessories|9394
+SUB|PDAs|38331
+SUB|Cell Phone & Smartphone Parts|43304
+SUB|Mixed Lots|45065
+SUB|Display Phones|136699
+SUB|Phone Cards & SIM Cards|146492
+SUB|PDA Accessories|175744
+SUB|Smart Watches|178893
+SUB|Smart Watch Accessories|182064
+SUB|Vintage Cell Phones|182073
+TOP|Antiques|20081
+SUB|Other Antiques|12
+SUB|Primitives|1217
+SUB|Ethnographic|2207
+SUB|Architectural & Garden|4707
+SUB|Asian Antiques|20082
+SUB|Furniture|20091
+SUB|Science & Medicine (Pre-1930)|20094
+SUB|Silver|20096
+SUB|Incunabula|22422
+SUB|Manuscripts|23048
+SUB|Maps, Atlases & Globes|37958
+SUB|Maritime|37965
+SUB|Rugs & Carpets|37978
+SUB|Sewing (Pre-1930)|156323
+SUB|Mercantile, Trades & Factories|163091
+SUB|Musical Instruments (Pre-1930)|181726
+SUB|Tapestries|261588
+SUB|Restoration & Care|261755
+TOP|Health & Beauty|26395
+SUB|Other Health & Beauty|1277
+SUB|Medical & Mobility|11778
+SUB|Bath & Body|11838
+SUB|Hair Care & Styling|11854
+SUB|Skin Care|11863
+SUB|Vision Care|31414
+SUB|Shaving & Hair Removal|31762
+SUB|Oral Care|31769
+SUB|Sun Protection & Tanning|31772
+SUB|Makeup|31786
+SUB|Tattoos & Body Art|33914
+SUB|Massage|36447
+SUB|Wholesale Lots|40965
+SUB|Nail Care, Manicure & Pedicure|47945
+SUB|Health Care|67588
+SUB|Natural & Alternative Remedies|67659
+SUB|Salon & Spa Equipment|177731
+SUB|Fragrances|180345
+SUB|Vitamins & Lifestyle Supplements|180959
+SUB|Cannabis Accessories|259707
+TOP|Entertainment Memorabilia|45100
+SUB|Autographs-Original|57
+SUB|Movie Memorabilia|196
+SUB|Television Memorabilia|1424
+SUB|Other Entertainment Mem|2312
+SUB|Music Memorabilia|2329
+SUB|Theatre Memorabilia|2362
+SUB|Video Game Memorabilia|45101
+SUB|Autographs-Reprints|104412
+TOP|Computers/Tablets & Networking|58058
+SUB|Other Computers & Networking|162
+SUB|Drives, Storage & Blank Media|165
+SUB|Manuals & Resources|3516
+SUB|Keyboards, Mice & Pointers|3676
+SUB|Home Networking & Connectivity|11176
+SUB|Vintage Computing|11189
+SUB|Software|18793
+SUB|Laptop & Desktop Accessories|31530
+SUB|Power Protection, Distribution|86722
+SUB|Monitors, Projectors & Accs|162497
+SUB|Tablets & eBook Readers|171485
+SUB|Desktops & All-In-Ones|171957
+SUB|Printers, Scanners & Supplies|171961
+SUB|Laptops & Netbooks|175672
+SUB|Computer Components & Parts|175673
+SUB|Enterprise Networking, Servers|175698
+SUB|Tablet & eBook Reader Accs|176970
+SUB|Tablet & eBook Reader Parts|180235
+SUB|Computer Cables & Connectors|182094
+SUB|3D Printers & Supplies|183062
+SUB|Mixed Lots|259696
+TOP|Sports Mem, Cards & Fan Shop|64482
+SUB|Autographs-Original|51
+SUB|Sports Trading Cards|212
+SUB|Fan Apparel & Souvenirs|24409
+SUB|Autographs-Reprints|50115
+SUB|Game Used Memorabilia|50116
+SUB|Vintage Sports Memorabilia|50123
+SUB|Wholesale Lots|56080
+SUB|Sports Stickers, Collections & Albums|262343
+TOP|Gift Cards & Coupons|172008
+SUB|Gift Certificates|31411
+SUB|Gift Cards|172009
+SUB|Coupons|172010
+SUB|eBay Gift Cards|172036
+SUB|Deal Vouchers|176950

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_category.html" as cat with context %}
 
 {% block content %}
 <div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
@@ -41,14 +42,9 @@
                 <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Title *</label>
                 <input type="text" name="title" value="{{ item.title }}" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
             </div>
-            <div>
-                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">Category</label>
-                <select name="category" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff;">
-                    <option value="">Select a category...</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat }}" {% if item.category == cat %}selected{% endif %}>{{ cat }}</option>
-                    {% endfor %}
-                </select>
+            <div style="grid-column: span 2;">
+                <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;">eBay Category</label>
+                {{ cat.picker(categories, item.category or '') }}
             </div>
 
             <!-- Condition Dropdown -->
@@ -146,4 +142,5 @@
         </div>
     </form>
 </div>
+<script src="{{ url_for('static', filename='js/category-picker.js') }}"></script>
 {% endblock %}

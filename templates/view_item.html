@@ -51,8 +51,11 @@
         <!-- Summary Grid -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; background-color: #f9fafb; padding: 16px; border-radius: 6px;">
             <div>
-                <span style="display: block; font-size: 12px; color: #6b7280;">Category</span>
+                <span style="display: block; font-size: 12px; color: #6b7280;">eBay Category</span>
                 <strong style="font-size: 14px; color: #111827;">{{ item.category or 'N/A' }}</strong>
+                {% if ebay_category_id(item.category) %}
+                    <span style="display: block; font-size: 12px; color: #6b7280; margin-top: 2px;">eBay category ID: {{ ebay_category_id(item.category) }}</span>
+                {% endif %}
             </div>
             <div>
                 <strong style="color: #6b7280; display: block; font-size: 12px;">Condition</strong>

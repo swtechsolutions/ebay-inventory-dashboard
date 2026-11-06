@@ -7,11 +7,12 @@ A web application built with Python and Flask to manage resale inventory, track 
 ## Key Features
 
 - **Inventory List**: Search by title or SKU, filter by category, and page through all your items with thumbnail, status, listing price and profit at a glance.
-- **Item Tracking**: Record SKU, title, category, condition, description and status (Unlisted, Listed, Sold). Date added, date listed and date sold are recorded automatically, and the sold date can be changed by hand.
+- **eBay Categories**: Items use eBay Canada's own categories (35 top-level, 475 sub-categories) with a searchable picker, and each item page shows the eBay category ID to use when listing.
+- **Item Tracking**: Record SKU, title, eBay category, condition, description and status (Unlisted, Listed, Sold). Date added, date listed and date sold are recorded automatically, and the sold date can be changed by hand.
 - **Multiple Photos per Item**: Upload several photos per item, add more later, and delete individual photos from the edit page.
 - **Profit Tracking**: Enter revenue (item price, shipping paid, tax collected) and expenses (transaction, promo and other fees, item cost, shipping cost, tax paid); total revenue, total costs, profit and margin are calculated for you.
 - **eBay HTML Description Generator**: Each item page produces ready-to-paste HTML for eBay's description editor, with a one-click copy button.
-- **Reports**: Sold and unsold item reports with charts and tables, filterable by date range and category:
+- **Reports**: Sold and unsold item reports with charts and tables, filterable by date range and category (top level or sub-category), and grouped by either level:
   - Sold: profit, revenue, expenses, margin, average days to sell, monthly revenue/expenses/profit chart, profit by category, expense breakdown, and full item detail.
   - Unsold: money invested, listing value, potential profit, cost vs. listing value by category, and inventory age.
   - Export any report to CSV (opens in Excel).
@@ -33,21 +34,28 @@ A web application built with Python and Flask to manage resale inventory, track 
 ebay-inventory-dashboard/
 │
 ├── app.py                   # Flask application: models, routes and reports
+├── ebay_categories.py       # Loads the eBay category list
 ├── requirements.txt         # Python packages to install
 ├── ebay-app.service         # Sample systemd service file (edit paths before use)
 ├── .gitignore               # Ignores the database, virtual environment and uploaded photos
 ├── README.md
+│
+├── data/
+│   └── ebay_categories_ca.txt  # eBay Canada categories and IDs (from ebay.ca/n/all-categories)
 │
 ├── instance/
 │   └── inventory.db         # SQLite database (created automatically on first run)
 │
 ├── static/
 │   ├── uploads/             # Uploaded product photos
+│   ├── js/
+│   │   └── category-picker.js  # Search box for the category dropdown
 │   └── vendor/
 │       └── chart.umd.min.js # Chart.js library used by the reports page
 │
 └── templates/
     ├── base.html            # Shared layout and navigation bar
+    ├── _category.html       # Category picker and category filter components
     ├── index.html           # Inventory list
     ├── add_item.html        # Add item form
     ├── edit_item.html       # Edit item form and photo management
@@ -135,3 +143,16 @@ Your data is **not** stored in Git (see `.gitignore`). To back up or move your i
 - `static/uploads/` – all product photos
 
 Stop the app before copying the database so the copy is complete.
+
+---
+
+## Updating the eBay Category List
+
+eBay occasionally adds, renames or removes categories. The list lives in `data/ebay_categories_ca.txt`, one category per line:
+
+```text
+TOP|Computers/Tablets & Networking|58058
+SUB|Laptops & Netbooks|175672
+```
+
+Each `TOP` line is a top-level category and the `SUB` lines under it are its sub-categories, with the eBay category ID last. Compare against https://www.ebay.ca/n/all-categories, edit the file, and restart the app. Items store the full category path (e.g. `Computers/Tablets & Networking > Laptops & Netbooks`), so if a category is renamed, existing items keep the old name and show it as an "old category" until you pick a new one.

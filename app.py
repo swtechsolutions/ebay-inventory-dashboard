@@ -8,6 +8,9 @@ from flask_sqlalchemy import SQLAlchemy
 from markupsafe import escape
 from sqlalchemy.exc import IntegrityError
 
+from ebay_categories import (EBAY_CATEGORY_TREE, SEPARATOR, TOP_LEVEL_NAMES, ebay_category_id,
+                             is_valid_category, top_level)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'
@@ -22,16 +25,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = SQLAlchemy(app)
 
-# Master category list
-CATEGORIES = [
-    'Clothing & Apparel',
-    'Electronics',
-    'Home & Kitchen',
-    'Toys & Games',
-    'Books & Media',
-    'Sporting Goods',
-    'Other'
-]
+# Categories come from eBay Canada's category list (see ebay_categories.py)
+UNCATEGORIZED = '__none__'
 
 # Master Condition list
 CONDITIONS = ['New', 'Open Box', 'Very Good', 'Good', 'Acceptable', 'For Parts / Not Working']
@@ -178,7 +173,12 @@ def apply_form(item, form):
     """Copies the editable text and money fields from a submitted form onto an Item."""
     item.sku = (form.get('sku') or '').strip()
     item.title = (form.get('title') or '').strip()
-    item.category = form.get('category')
+    category = (form.get('category') or '').strip()
+    if not category:
+        item.category = None
+    elif is_valid_category(category):
+        item.category = category
+    # Anything else (e.g. an old pre-eBay category left unchanged) keeps the item's current value
     item.condition = form.get('condition')
     item.description = form.get('description')
     for field in ('listing_price', 'item_price', 'shipping_paid', 'tax_in',
@@ -198,6 +198,38 @@ def ebay_html(text):
     return str(escape(text)).replace('\n', '<br>\n')
 
 
+@app.context_processor
+def category_helpers():
+    return {'ebay_category_id': ebay_category_id, 'category_separator': SEPARATOR}
+
+
+def filter_by_category(query, category):
+    """Filters by a full category path, a top-level name (includes all its sub-categories),
+    or UNCATEGORIZED."""
+    if category == UNCATEGORIZED:
+        return query.filter((Item.category.is_(None)) | (Item.category == ''))
+    if category in TOP_LEVEL_NAMES:
+        return query.filter((Item.category == category) |
+                            (Item.category.startswith(category + SEPARATOR, autoescape=True)))
+    if category:
+        return query.filter(Item.category == category)
+    return query
+
+
+def category_filter_options():
+    """Options for category filter dropdowns: only categories that items actually use,
+    grouped by eBay top level, plus any old-style categories under 'Other'."""
+    used = {c[0] for c in db.session.query(Item.category).distinct().all() if c[0]}
+    groups = []
+    for top in EBAY_CATEGORY_TREE:
+        subs = [s['path'] for s in top['subs'] if s['path'] in used]
+        if subs or top['name'] in used:
+            groups.append({'top': top['name'], 'subs': subs})
+    known = {s for g in groups for s in g['subs']} | {g['top'] for g in groups}
+    legacy = sorted(used - known)
+    return {'groups': groups, 'legacy': legacy}
+
+
 # ==============================================================================
 # Routes
 # ==============================================================================
@@ -212,13 +244,13 @@ def index():
 
     if search_query:
         query = query.filter((Item.title.ilike(f"%{search_query}%")) | (Item.sku.ilike(f"%{search_query}%")))
-    if selected_category:
-        query = query.filter(Item.category == selected_category)
+    query = filter_by_category(query, selected_category)
 
     pagination = query.order_by(Item.id.desc()).paginate(page=page, per_page=10, error_out=False)
-    categories = [cat[0] for cat in db.session.query(Item.category).distinct().all() if cat[0]]
 
-    return render_template('index.html', pagination=pagination, search_query=search_query, selected_category=selected_category, categories=categories)
+    return render_template('index.html', pagination=pagination, search_query=search_query,
+                           selected_category=selected_category, category_options=category_filter_options(),
+                           uncategorized=UNCATEGORIZED)
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -235,7 +267,7 @@ def add_item():
 
         if sku_taken(new_item.sku):
             flash(f"SKU '{new_item.sku}' is already used by another item. Please choose a different SKU.", 'error')
-            return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS,
+            return render_template('add_item.html', categories=EBAY_CATEGORY_TREE, conditions=CONDITIONS,
                                    form=request.form), 400
 
         db.session.add(new_item)
@@ -246,12 +278,12 @@ def add_item():
         except IntegrityError:
             db.session.rollback()
             flash(f"SKU '{new_item.sku}' is already used by another item. Please choose a different SKU.", 'error')
-            return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS,
+            return render_template('add_item.html', categories=EBAY_CATEGORY_TREE, conditions=CONDITIONS,
                                    form=request.form), 400
 
         return redirect(url_for('index'))
 
-    return render_template('add_item.html', categories=CATEGORIES, conditions=CONDITIONS, form={})
+    return render_template('add_item.html', categories=EBAY_CATEGORY_TREE, conditions=CONDITIONS, form={})
 
 
 @app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
@@ -292,7 +324,7 @@ def edit_item(item_id):
             flash(f"SKU '{item.sku}' is already used by another item. Please choose a different SKU.", 'error')
             # Re-show the form with the user's edits, then discard them
             with db.session.no_autoflush:
-                page = render_template('edit_item.html', item=item, categories=CATEGORIES, conditions=CONDITIONS)
+                page = render_template('edit_item.html', item=item, categories=EBAY_CATEGORY_TREE, conditions=CONDITIONS)
             db.session.rollback()
             return page, 400
 
@@ -307,7 +339,7 @@ def edit_item(item_id):
 
         return redirect(url_for('view_item', item_id=item.id))
 
-    return render_template('edit_item.html', item=item, categories=CATEGORIES, conditions=CONDITIONS)
+    return render_template('edit_item.html', item=item, categories=EBAY_CATEGORY_TREE, conditions=CONDITIONS)
 
 
 @app.route('/delete-image/<int:image_id>', methods=['POST'])
@@ -358,7 +390,7 @@ EXPENSE_FIELDS = [
     ('tax_out', 'Tax paid'),
 ]
 
-UNCATEGORIZED = '__none__'
+GROUP_BY_OPTIONS = [('top', 'Top-level category'), ('sub', 'Sub-category')]
 
 AGE_BUCKETS = [(0, 30, '0–30 days'), (31, 60, '31–60 days'), (61, 90, '61–90 days'),
                (91, 180, '91–180 days'), (181, None, '180+ days')]
@@ -398,21 +430,17 @@ def get_report_filters(args):
     start, end = resolve_date_range(preset, args.get('start'), args.get('end'))
     if start and end and start > end:
         start, end = end, start
+    group_by = args.get('group', 'top')
+    if group_by not in dict(GROUP_BY_OPTIONS):
+        group_by = 'top'
     return {
         'type': report_type,
         'category': args.get('category', '').strip(),
+        'group': group_by,
         'range': preset,
         'start': start,
         'end': end,
     }
-
-
-def filter_by_category(query, category):
-    if category == UNCATEGORIZED:
-        return query.filter((Item.category.is_(None)) | (Item.category == ''))
-    if category:
-        return query.filter(Item.category == category)
-    return query
 
 
 def query_sold(filters):
@@ -445,11 +473,13 @@ def month_range(first, last):
             year, month = year + 1, 1
 
 
-def category_name(item):
-    return item.category or 'Uncategorized'
+def category_name(item, group_by='top'):
+    if not item.category:
+        return 'Uncategorized'
+    return top_level(item.category) if group_by == 'top' else item.category
 
 
-def build_sold_report(items):
+def build_sold_report(items, group_by='top'):
     revenue = sum(i.total_revenue for i in items)
     expenses = sum(i.total_costs for i in items)
     profit = revenue - expenses
@@ -488,7 +518,7 @@ def build_sold_report(items):
     # By category
     cats = {}
     for i in items:
-        c = cats.setdefault(category_name(i), {'count': 0, 'revenue': 0.0, 'expenses': 0.0})
+        c = cats.setdefault(category_name(i, group_by), {'count': 0, 'revenue': 0.0, 'expenses': 0.0})
         c['count'] += 1
         c['revenue'] += i.total_revenue
         c['expenses'] += i.total_costs
@@ -518,14 +548,14 @@ def build_sold_report(items):
     }
 
 
-def build_unsold_report(items):
+def build_unsold_report(items, group_by='top'):
     cost = sum(i.item_cost or 0.0 for i in items)
     listing_value = sum(i.listing_price or 0.0 for i in items)
     ages = [i.days_in_inventory for i in items if i.days_in_inventory is not None]
 
     cats = {}
     for i in items:
-        c = cats.setdefault(category_name(i), {'count': 0, 'cost': 0.0, 'listing_value': 0.0})
+        c = cats.setdefault(category_name(i, group_by), {'count': 0, 'cost': 0.0, 'listing_value': 0.0})
         c['count'] += 1
         c['cost'] += i.item_cost or 0.0
         c['listing_value'] += i.listing_price or 0.0
@@ -558,16 +588,12 @@ def build_unsold_report(items):
     }
 
 
-def report_category_options():
-    used = {c[0] for c in db.session.query(Item.category).distinct().all() if c[0]}
-    return CATEGORIES + sorted(used - set(CATEGORIES))
-
-
 @app.route('/reports')
 def reports():
     filters = get_report_filters(request.args)
-    sold = build_sold_report(query_sold(filters)) if filters['type'] in ('sold', 'all') else None
-    unsold = build_unsold_report(query_unsold(filters)) if filters['type'] in ('unsold', 'all') else None
+    group_by = filters['group']
+    sold = build_sold_report(query_sold(filters), group_by) if filters['type'] in ('sold', 'all') else None
+    unsold = build_unsold_report(query_unsold(filters), group_by) if filters['type'] in ('unsold', 'all') else None
 
     chart_data = {}
     if sold:
@@ -579,8 +605,8 @@ def reports():
 
     return render_template(
         'reports.html', filters=filters, sold=sold, unsold=unsold, chart_data=chart_data,
-        report_types=REPORT_TYPES, date_presets=DATE_PRESETS,
-        categories=report_category_options(), uncategorized=UNCATEGORIZED,
+        report_types=REPORT_TYPES, date_presets=DATE_PRESETS, group_by_options=GROUP_BY_OPTIONS,
+        category_options=category_filter_options(), uncategorized=UNCATEGORIZED,
     )
 
 
@@ -599,14 +625,14 @@ def export_report():
 
     out = io.StringIO()
     writer = csv.writer(out)
-    writer.writerow(['SKU', 'Title', 'Category', 'Condition', 'Status', 'Date Added', 'Date Listed',
+    writer.writerow(['SKU', 'Title', 'Category', 'eBay Category ID', 'Condition', 'Status', 'Date Added', 'Date Listed',
                      'Date Sold', 'Days To Sell', 'Days In Inventory', 'Listing Price', 'Item Price',
                      'Shipping Paid', 'Tax In', 'Total Revenue', 'TX Fees', 'Promo Fees', 'Other Fees',
                      'Item Cost', 'Shipping Cost', 'Tax Out', 'Total Costs', 'Profit', 'Margin %'])
     for i in items:
         sold_item = i.status == 'Sold'
         writer.writerow([
-            i.sku, i.title, i.category or '', i.condition or '', i.status or '',
+            i.sku, i.title, i.category or '', ebay_category_id(i.category) or '', i.condition or '', i.status or '',
             fmt_date(i.date_added), fmt_date(i.date_listed), fmt_date(i.date_sold),
             i.days_to_sell if sold_item and i.days_to_sell is not None else '',
             '' if sold_item or i.days_in_inventory is None else i.days_in_inventory,

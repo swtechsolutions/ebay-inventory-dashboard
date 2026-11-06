@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_category.html" as cat with context %}
+{% import "_package.html" as pkg %}
 
 {% block content %}
 <div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
@@ -91,6 +92,9 @@
                 <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0;">Only used when Status is Sold. Leave blank to use today's date.</p>
             </div>
         </div>
+
+        {{ pkg.fields(item.length_cm|measure, item.width_cm|measure, item.height_cm|measure,
+                      item.weight_kg_part if item.weight_g else '', item.weight_g_part if item.weight_g else '') }}
 
         <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 24px;">Incoming Revenue</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">

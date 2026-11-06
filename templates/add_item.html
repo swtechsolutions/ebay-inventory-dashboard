@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "_category.html" as cat with context %}
+{% import "_package.html" as pkg %}
 
 {% block content %}
 <div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
@@ -58,6 +59,9 @@
                 <input type="number" step="0.01" min="0" name="listing_price" value="{{ form.get('listing_price', '0.00') }}" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;">
             </div>
         </div>
+
+        {{ pkg.fields(form.get('length_cm', ''), form.get('width_cm', ''), form.get('height_cm', ''),
+                      form.get('weight_kg', ''), form.get('weight_g', '')) }}
 
         <!-- Outgoing Fees & Costs -->
         <h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 24px;">Outgoing Fees & Costs</h2>

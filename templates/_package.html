@@ -1,0 +1,33 @@
+{# Package size and weight inputs (metric) for the add/edit forms. Import with:
+   {% import "_package.html" as pkg %}
+   Values are strings/numbers to prefill; blank means not entered. #}
+{% macro fields(length='', width='', height='', kg='', g='') %}
+{% set input_style = "width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box;" %}
+{% set label_style = "display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px;" %}
+<h2 style="font-size: 16px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-top: 24px;">Package Size &amp; Weight</h2>
+<p style="font-size: 12px; color: #6b7280; margin: 0 0 12px;">Measure the packed box, as entered in eBay's shipping details. Leave blank if not known yet.</p>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div>
+        <label for="pkg-length" style="{{ label_style }}">Length (cm)</label>
+        <input id="pkg-length" type="number" step="0.1" min="0" name="length_cm" value="{{ length }}" placeholder="0" style="{{ input_style }}">
+    </div>
+    <div>
+        <label for="pkg-width" style="{{ label_style }}">Width (cm)</label>
+        <input id="pkg-width" type="number" step="0.1" min="0" name="width_cm" value="{{ width }}" placeholder="0" style="{{ input_style }}">
+    </div>
+    <div>
+        <label for="pkg-height" style="{{ label_style }}">Height (cm)</label>
+        <input id="pkg-height" type="number" step="0.1" min="0" name="height_cm" value="{{ height }}" placeholder="0" style="{{ input_style }}">
+    </div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+    <div>
+        <label for="pkg-kg" style="{{ label_style }}">Weight (kg)</label>
+        <input id="pkg-kg" type="number" step="1" min="0" name="weight_kg" value="{{ kg }}" placeholder="0" style="{{ input_style }}">
+    </div>
+    <div>
+        <label for="pkg-g" style="{{ label_style }}">Weight (g)</label>
+        <input id="pkg-g" type="number" step="1" min="0" max="999" name="weight_g" value="{{ g }}" placeholder="0" style="{{ input_style }}">
+    </div>
+</div>
+{% endmacro %}

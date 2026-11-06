@@ -79,6 +79,14 @@
                 <strong style="color: #6b7280; display: block; font-size: 12px;">Date Sold</strong>
                 <span>{{ item.date_sold.strftime('%b %d, %Y') if item.date_sold else 'Not Sold' }}</span>
             </div>
+            <div>
+                <strong style="color: #6b7280; display: block; font-size: 12px;">Package Size (L x W x H)</strong>
+                <span>{{ item.dimensions_display or 'Not entered' }}</span>
+            </div>
+            <div>
+                <strong style="color: #6b7280; display: block; font-size: 12px;">Package Weight</strong>
+                <span>{{ item.weight_display or 'Not entered' }}</span>
+            </div>
         </div>
         <!-- Visible Description Section -->
         <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">

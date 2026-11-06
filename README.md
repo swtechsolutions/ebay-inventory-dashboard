@@ -9,6 +9,7 @@ A web application built with Python and Flask to manage resale inventory, track 
 - **Inventory List**: Search by title or SKU, filter by category, and page through all your items with thumbnail, status, listing price and profit at a glance.
 - **eBay Categories**: Items use eBay Canada's own categories (35 top-level, 475 sub-categories) with a searchable picker, and each item page shows the eBay category ID to use when listing.
 - **Item Tracking**: Record SKU, title, eBay category, condition, description and status (Unlisted, Listed, Sold). Date added, date listed and date sold are recorded automatically, and the sold date can be changed by hand.
+- **Package Size & Weight**: Record the packed box's length, width and height (cm) and weight (kg + g, as on eBay's shipping form). Existing databases get the new fields automatically when the app starts.
 - **Multiple Photos per Item**: Upload several photos per item, add more later, and delete individual photos from the edit page.
 - **Profit Tracking**: Enter revenue (item price, shipping paid, tax collected) and expenses (transaction, promo and other fees, item cost, shipping cost, tax paid); total revenue, total costs, profit and margin are calculated for you.
 - **eBay HTML Description Generator**: Each item page produces ready-to-paste HTML for eBay's description editor, with a one-click copy button.
@@ -56,6 +57,7 @@ ebay-inventory-dashboard/
 └── templates/
     ├── base.html            # Shared layout and navigation bar
     ├── _category.html       # Category picker and category filter components
+    ├── _package.html        # Package size & weight form fields
     ├── index.html           # Inventory list
     ├── add_item.html        # Add item form
     ├── edit_item.html       # Edit item form and photo management

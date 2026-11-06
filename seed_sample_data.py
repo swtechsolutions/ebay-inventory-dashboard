@@ -17,7 +17,7 @@ import os
 import sys
 from datetime import date, datetime, time, timedelta
 
-from app import app, db, Item
+from app import app, db, init_db, Item
 from ebay_categories import is_valid_category
 
 PREFIX = 'DEMO-'
@@ -154,6 +154,20 @@ SAMPLES = [
 ]
 
 
+# Packed box size (L x W x H cm) and weight (g) per sample. DEMO-3004 is left blank on purpose.
+PACKAGES = {
+    'DEMO-1001': (45, 35, 10, 2600), 'DEMO-1002': (18, 13, 4, 180), 'DEMO-1003': (22, 16, 8, 750),
+    'DEMO-1004': (20, 15, 10, 420), 'DEMO-1005': (35, 35, 4, 680), 'DEMO-1006': (35, 35, 4, 640),
+    'DEMO-1007': (35, 25, 15, 1950), 'DEMO-1008': (20, 14, 3, 150), 'DEMO-1009': (85, 60, 20, 10400),
+    'DEMO-1010': (30, 30, 20, 1900), 'DEMO-1011': (30, 25, 12, 1600), 'DEMO-1012': (35, 30, 8, 750),
+    'DEMO-1013': (15, 12, 10, 350), 'DEMO-1014': (30, 22, 5, 700), 'DEMO-1015': (15, 10, 2, 60),
+    'DEMO-1016': (25, 22, 10, 650), 'DEMO-1017': (20, 15, 8, 450), 'DEMO-1018': (15, 10, 5, 80),
+    'DEMO-2001': (30, 25, 12, 2100), 'DEMO-2002': (35, 25, 10, 1300), 'DEMO-2003': (35, 35, 4, 650),
+    'DEMO-2004': (110, 40, 12, 5200), 'DEMO-2005': (20, 15, 2, 50), 'DEMO-2006': (50, 40, 45, 13500),
+    'DEMO-2007': (15, 12, 8, 250), 'DEMO-3001': (18, 13, 4, 120), 'DEMO-3002': (45, 35, 30, 11250),
+    'DEMO-3003': (40, 40, 25, 4750), 'DEMO-3005': (35, 35, 25, 2800),
+}
+
 def stamp(days_ago):
     """A datetime `days_ago` days before today (mid-morning, so dates don't shift across time zones)."""
     return datetime.combine(date.today() - timedelta(days=days_ago), time(14, 0))
@@ -171,6 +185,9 @@ def build_item(sample):
     item = Item(sku=sku, title=title, category=category, condition=condition, status=status,
                 description=description, date_added=added, date_listed=listed,
                 listing_price=listing_price, item_cost=item_cost)
+    if sku in PACKAGES:
+        item.length_cm, item.width_cm, item.height_cm, grams = PACKAGES[sku]
+        item.weight_g = round(grams)
 
     if status == 'Sold':
         sold_on = (listed + timedelta(days=sold_after)).date()
@@ -220,7 +237,7 @@ def main():
     args = parser.parse_args()
 
     with app.app_context():
-        db.create_all()
+        init_db()
         if args.remove or args.reset:
             print(f"Removed {remove_samples()} sample item(s).")
         if args.remove:

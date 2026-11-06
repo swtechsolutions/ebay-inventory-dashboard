@@ -79,7 +79,43 @@ class Item(db.Model):
     shipping_cost = db.Column(db.Float, default=0.0)
     tax_out = db.Column(db.Float, default=0.0)
 
+    # Package size and weight (metric). Blank until entered.
+    length_cm = db.Column(db.Float, nullable=True)
+    width_cm = db.Column(db.Float, nullable=True)
+    height_cm = db.Column(db.Float, nullable=True)
+    weight_g = db.Column(db.Integer, nullable=True)  # total weight in grams
+
     # Computed Properties
+    @property
+    def has_dimensions(self):
+        return all(v for v in (self.length_cm, self.width_cm, self.height_cm))
+
+    @property
+    def dimensions_display(self):
+        """e.g. '40 x 30 x 8.5 cm' (length x width x height), or None if not all three are set."""
+        if not self.has_dimensions:
+            return None
+        return ' x '.join(fmt_number(v) for v in (self.length_cm, self.width_cm, self.height_cm)) + ' cm'
+
+    @property
+    def weight_kg_part(self):
+        return self.weight_g // 1000 if self.weight_g else None
+
+    @property
+    def weight_g_part(self):
+        return self.weight_g % 1000 if self.weight_g else None
+
+    @property
+    def weight_display(self):
+        """e.g. '1 kg 250 g' or '850 g', or None if no weight is set."""
+        if not self.weight_g:
+            return None
+        kg, g = divmod(self.weight_g, 1000)
+        if not kg:
+            return f"{g} g"
+        return f"{kg} kg {g} g" if g else f"{kg} kg"
+
+
     @property
     def total_revenue(self):
         return (self.item_price or 0.0) + (self.shipping_paid or 0.0) + (self.tax_in or 0.0)
@@ -138,6 +174,20 @@ def parse_float(val):
     except (ValueError, TypeError):
         return 0.0
 
+def parse_measure(val):
+    """A positive number from a form field, or None if blank, zero, negative or not a number."""
+    try:
+        number = float(val)
+    except (ValueError, TypeError):
+        return None
+    return number if number > 0 else None
+
+def fmt_number(value):
+    """Formats a measurement without needless decimals: 40.0 -> '40', 8.25 -> '8.25'."""
+    return f"{value:.2f}".rstrip('0').rstrip('.')
+
+app.jinja_env.filters['measure'] = lambda v: fmt_number(v) if v else ''
+
 def parse_date(val):
     try:
         return datetime.strptime(val, '%Y-%m-%d').date() if val else None
@@ -187,6 +237,12 @@ def apply_form(item, form):
         # Fields missing from a form (e.g. revenue fields on the add page) stay unchanged
         if field in form:
             setattr(item, field, parse_float(form.get(field)))
+    for field in ('length_cm', 'width_cm', 'height_cm'):
+        if field in form:
+            setattr(item, field, parse_measure(form.get(field)))
+    if 'weight_kg' in form or 'weight_g' in form:
+        grams = (parse_measure(form.get('weight_kg')) or 0) * 1000 + (parse_measure(form.get('weight_g')) or 0)
+        item.weight_g = round(grams) or None
 
 
 @app.template_filter('ebay_html')
@@ -628,7 +684,8 @@ def export_report():
     writer.writerow(['SKU', 'Title', 'Category', 'eBay Category ID', 'Condition', 'Status', 'Date Added', 'Date Listed',
                      'Date Sold', 'Days To Sell', 'Days In Inventory', 'Listing Price', 'Item Price',
                      'Shipping Paid', 'Tax In', 'Total Revenue', 'TX Fees', 'Promo Fees', 'Other Fees',
-                     'Item Cost', 'Shipping Cost', 'Tax Out', 'Total Costs', 'Profit', 'Margin %'])
+                     'Item Cost', 'Shipping Cost', 'Tax Out', 'Total Costs', 'Profit', 'Margin %',
+                     'Length (cm)', 'Width (cm)', 'Height (cm)', 'Weight (g)'])
     for i in items:
         sold_item = i.status == 'Sold'
         writer.writerow([
@@ -641,6 +698,8 @@ def export_report():
             f"{i.promo_fees or 0:.2f}", f"{i.other_fees or 0:.2f}", f"{i.item_cost or 0:.2f}",
             f"{i.shipping_cost or 0:.2f}", f"{i.tax_out or 0:.2f}", f"{i.total_costs:.2f}",
             f"{i.profit:.2f}", f"{i.profit_margin:.1f}",
+            fmt_number(i.length_cm) if i.length_cm else '', fmt_number(i.width_cm) if i.width_cm else '',
+            fmt_number(i.height_cm) if i.height_cm else '', i.weight_g or '',
         ])
 
     filename = f"inventory-report-{filters['type']}-{date.today().isoformat()}.csv"
@@ -649,7 +708,20 @@ def export_report():
                     headers={'Content-Disposition': f'attachment; filename="{filename}"'})
 
 
+def init_db():
+    """Creates missing tables, and adds columns introduced since the database was created."""
+    db.create_all()
+    new_columns = {
+        'length_cm': 'FLOAT', 'width_cm': 'FLOAT', 'height_cm': 'FLOAT', 'weight_g': 'INTEGER',
+    }
+    existing = {col['name'] for col in db.inspect(db.engine).get_columns('items')}
+    with db.engine.begin() as conn:
+        for name, sql_type in new_columns.items():
+            if name not in existing:
+                conn.exec_driver_sql(f'ALTER TABLE items ADD COLUMN {name} {sql_type}')
+
+
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        init_db()
     app.run(debug=True)
